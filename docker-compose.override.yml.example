@@ -1,0 +1,30 @@
+# Przykładowy plik override dla lokalnego developmentu
+# Skopiuj do docker-compose.override.yml i dostosuj do swoich potrzeb
+#
+# docker-compose.override.yml automatycznie merguje się z docker-compose.yml
+# Użyj go do lokalnych customizacji bez modyfikowania głównego pliku
+
+version: '3.8'
+
+services:
+  app:
+    # Przykład: montowanie dodatkowego wolumenu
+    # volumes:
+    #   - ./custom-config:/config
+
+    # Przykład: dodatkowe zmienne środowiskowe
+    # environment:
+    #   - PHP_IDE_CONFIG=serverName=Docker
+    #   - XDEBUG_CONFIG=client_host=172.17.0.1
+
+  # Przykład: dodatkowy serwis dla lokalnego developmentu
+  # adminer:
+  #   image: adminer
+  #   container_name: vibetravels-adminer
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - vibetravels
+  #   depends_on:
+  #     - mysql

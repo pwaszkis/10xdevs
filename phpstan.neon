@@ -1,0 +1,19 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests
+
+    level: 6
+
+    excludePaths:
+        - ./*/*/FileToBeExcluded.php
+
+    # Additional rules
+    reportUnmatchedIgnoredErrors: true
+    treatPhpDocTypesAsCertain: false

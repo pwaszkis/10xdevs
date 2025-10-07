@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        - USER_ID=${USER_ID:-1000}
+        - GROUP_ID=${GROUP_ID:-1000}
+    image: vibetravels-app
+    container_name: vibetravels-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+      - ./docker/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+    networks:
+      - vibetravels
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - PHP_IDE_CONFIG=serverName=Docker
+      - XDEBUG_MODE=${XDEBUG_MODE:-off}
+      - XDEBUG_CONFIG=client_host=host.docker.internal
+
+  nginx:
+    image: nginx:alpine
+    container_name: vibetravels-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - vibetravels
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    container_name: vibetravels-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-vibetravels}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_USER: ${DB_USERNAME:-vibetravels}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - vibetravels
+    command: --default-authentication-plugin=mysql_native_password
+
+  redis:
+    image: redis:7-alpine
+    container_name: vibetravels-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - vibetravels
+    command: redis-server --appendonly yes
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: vibetravels-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - vibetravels
+
+  node:
+    image: node:20-alpine
+    container_name: vibetravels-node
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - vibetravels
+    command: sh -c "npm install && npm run dev"
+    profiles:
+      - dev
+
+networks:
+  vibetravels:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
