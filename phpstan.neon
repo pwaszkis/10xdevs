@@ -17,3 +17,14 @@ parameters:
     # Additional rules
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        # Livewire 3 attributes - PHPStan doesn't recognize them
+        - '#Attribute class Livewire\\Attributes\\Prop does not exist#'
+
+        # Eloquent relationship return type covariance issues - false positives
+        - '#should return .+ but returns .+ \$this\(#'
+        - '#Generic type .+ in PHPDoc tag @return does not specify all template types#'
+
+        # Larastan suggestions - not actual errors
+        - '#Called .+Model::make\(\).+ use .+new Model\(\)#'

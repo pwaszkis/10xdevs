@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Component styles */
+@import './components/plan-details.css';
+
 /* Custom styles */
 @layer base {
     html {
