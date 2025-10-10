@@ -11,7 +11,7 @@ echo "🚀 Initializing Laravel 11 project..."
 if [ -f /.dockerenv ]; then
     DOCKER_EXEC=""
 else
-    DOCKER_EXEC="docker-compose run --rm app"
+    DOCKER_EXEC="docker compose run --rm app"
 fi
 
 # Check if Laravel is already installed
@@ -48,7 +48,7 @@ $DOCKER_EXEC composer require --dev friendsofphp/php-cs-fixer
 $DOCKER_EXEC composer require --dev squizlabs/php_codesniffer
 
 echo "📦 Installing npm dependencies..."
-docker-compose run --rm node npm install
+docker compose run --rm node npm install
 
 echo "🔑 Generating application key..."
 $DOCKER_EXEC php artisan key:generate

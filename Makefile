@@ -83,12 +83,6 @@ cs-fix:
 cs-check:
 	docker compose exec app ./vendor/bin/pint --test
 
-phpcs:
-	docker compose exec app ./vendor/bin/phpcs
-
-phpcs-fix:
-	docker compose exec app ./vendor/bin/phpcbf
-
 quality: phpstan cs-check test
 
 # Database
