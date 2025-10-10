@@ -37,7 +37,7 @@ readonly class PlanDayViewModel
 
         return $collection
             ->groupBy('dayPart')
-            ->map(fn($points) => $points->map(fn($point) => $point->toArray())->toArray())
+            ->map(fn ($points) => $points->map(fn ($point) => $point->toArray())->toArray())
             ->toArray();
     }
 
