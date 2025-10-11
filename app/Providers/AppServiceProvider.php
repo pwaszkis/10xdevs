@@ -56,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Policies are automatically discovered in Laravel 11
+        // TravelPlanPolicy will be auto-registered for TravelPlan model
     }
 }

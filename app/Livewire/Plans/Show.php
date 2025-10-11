@@ -4,17 +4,43 @@ declare(strict_types=1);
 
 namespace App\Livewire\Plans;
 
+use App\Exceptions\LimitExceededException;
+use App\Jobs\GenerateTravelPlanJob;
 use App\Models\Feedback;
 use App\Models\TravelPlan;
-use Illuminate\Support\Facades\Http;
+use App\Services\LimitService;
+use App\Services\PreferenceService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Title('Szczegóły planu')]
+#[Layout('components.layouts.app')]
 class Show extends Component
 {
+    // ==================== DEPENDENCY INJECTION ====================
+
+    protected LimitService $limitService;
+
+    protected PreferenceService $preferenceService;
+
+    /**
+     * Boot method for dependency injection.
+     */
+    public function boot(
+        LimitService $limitService,
+        PreferenceService $preferenceService
+    ): void {
+        $this->limitService = $limitService;
+        $this->preferenceService = $preferenceService;
+    }
+
+    // ==================== PROPERTIES ====================
+
     // Properties - Plan data
     public TravelPlan $plan;
 
@@ -98,13 +124,13 @@ class Show extends Component
     }
 
     /**
-     * Check if plan can be regenerated.
+     * Check if plan can be regenerated (or generated for the first time from draft).
      */
     #[Computed]
     public function canRegenerate(): bool
     {
-        return $this->plan->status !== 'draft'
-            && $this->aiGenerationsRemaining > 0;
+        // Allow generation for drafts (first time) and regeneration for already generated plans
+        return $this->aiGenerationsRemaining > 0;
     }
 
     /**
@@ -145,16 +171,24 @@ class Show extends Component
     }
 
     /**
-     * Show regenerate confirmation modal.
+     * Show regenerate confirmation modal (or generate directly for drafts).
      */
     public function regeneratePlan(): void
     {
         if (! $this->canRegenerate()) {
-            session()->flash('error', 'Nie można regenerować planu.');
+            session()->flash('error', 'Nie można wygenerować planu. Sprawdź limit generowań.');
 
             return;
         }
 
+        // For drafts, generate directly without confirmation modal
+        if ($this->plan->status === 'draft') {
+            $this->confirmRegenerate();
+
+            return;
+        }
+
+        // For already generated plans, show confirmation modal
         $this->showRegenerateModal = true;
     }
 
@@ -163,21 +197,65 @@ class Show extends Component
      */
     public function confirmRegenerate(): void
     {
-        // TEMPORARY: Mock regeneration instead of API call
-        // TODO: Implement actual API call to generate AI plan
+        $this->showRegenerateModal = false;
+
+        // Check limits
         if ($this->aiGenerationsRemaining <= 0) {
             session()->flash('error', "Osiągnięto limit generowań ({$this->aiGenerationsLimit}/miesiąc).");
-            $this->showRegenerateModal = false;
 
             return;
         }
 
-        // Mock: Set generating state
-        $this->isGenerating = true;
-        $this->generationId = rand(1, 1000);
-        $this->generationProgress = 0;
+        try {
+            // Start loading state
+            $this->isGenerating = true;
 
-        $this->showRegenerateModal = false;
+            // Increment generation count with race condition protection
+            $aiGeneration = $this->limitService->incrementGenerationCount(
+                Auth::id(),
+                $this->plan->id
+            );
+
+            // Get user preferences
+            $userPreferences = $this->preferenceService->getUserPreferences(Auth::id());
+
+            // Dispatch to queue (sync in local env due to PHP version constraints)
+            $job = GenerateTravelPlanJob::dispatch(
+                travelPlanId: $this->plan->id,
+                userId: Auth::id(),
+                aiGenerationId: $aiGeneration->id,
+                userPreferences: $userPreferences
+            );
+
+            // Use sync queue in local environment
+            if (app()->environment(['local', 'development'])) {
+                $job->onConnection('sync');
+            } else {
+                $job->onQueue('ai-generation');
+            }
+
+            // Store generation ID for polling
+            $this->generationId = $aiGeneration->id;
+            $this->generationProgress = 0;
+
+            // Update remaining generations
+            $this->aiGenerationsRemaining = $this->getUserAiGenerationsRemaining();
+
+            session()->flash('success', 'Generowanie planu rozpoczęte. Zajmie to około 30 sekund...');
+
+        } catch (LimitExceededException $e) {
+            $this->isGenerating = false;
+            session()->flash('error', $e->getMessage());
+            Log::warning('Generation limit exceeded', ['user_id' => Auth::id()]);
+        } catch (\Exception $e) {
+            $this->isGenerating = false;
+            session()->flash('error', 'Wystąpił problem z generowaniem planu. Spróbuj ponownie.');
+            Log::error('Failed to start plan generation', [
+                'user_id' => Auth::id(),
+                'plan_id' => $this->plan->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -190,24 +268,32 @@ class Show extends Component
             return;
         }
 
-        $response = Http::get("/api/travel-plans/{$this->plan->id}/generation-status");
+        // Check AI generation status from database
+        $aiGeneration = \App\Models\AIGeneration::find($this->generationId);
 
-        if ($response->successful()) {
-            $status = $response->json('data.status');
+        if (! $aiGeneration) {
+            $this->isGenerating = false;
+            session()->flash('error', 'Nie znaleziono informacji o generowaniu.');
 
-            if ($status === 'completed') {
-                $this->isGenerating = false;
-                $this->generationProgress = 100;
-                $this->loadPlan($this->plan->id);
-                session()->flash('success', 'Plan został pomyślnie wygenerowany!');
-            } elseif ($status === 'failed') {
-                $this->isGenerating = false;
-                $errorMessage = $response->json('data.error_message');
-                session()->flash('error', "Generowanie nie powiodło się: {$errorMessage}");
-            } else {
-                // Processing
-                $this->generationProgress = $response->json('data.progress_percentage', 0);
-            }
+            return;
+        }
+
+        if ($aiGeneration->status === 'completed') {
+            $this->isGenerating = false;
+            $this->generationProgress = 100;
+            $this->loadPlan($this->plan->id);
+            session()->flash('success', 'Plan został pomyślnie wygenerowany!');
+        } elseif ($aiGeneration->status === 'failed') {
+            $this->isGenerating = false;
+            $errorMessage = $aiGeneration->error_message ?? 'Nieznany błąd';
+            session()->flash('error', "Generowanie nie powiodło się: {$errorMessage}");
+        } else {
+            // Processing - estimate progress based on time elapsed
+            $elapsed = now()->diffInSeconds($aiGeneration->created_at);
+            $estimatedDuration = 30; // seconds
+            // Cap at 90% until completion, prevent going over 100%
+            $calculatedProgress = ($elapsed / $estimatedDuration) * 100;
+            $this->generationProgress = (int) min(90, max(0, $calculatedProgress));
         }
     }
 

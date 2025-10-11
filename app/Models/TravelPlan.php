@@ -122,6 +122,16 @@ class TravelPlan extends Model
     }
 
     /**
+     * Get the AI generations for the travel plan.
+     *
+     * @return HasMany<AIGeneration>
+     */
+    public function aiGenerations(): HasMany
+    {
+        return $this->hasMany(AIGeneration::class);
+    }
+
+    /**
      * Scope a query to only include plans owned by the authenticated user.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<TravelPlan>  $query
@@ -130,6 +140,50 @@ class TravelPlan extends Model
     public function scopeOwnedBy($query, int $userId)
     {
         return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope a query to only include plans for a specific user.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<TravelPlan>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<TravelPlan>
+     */
+    public function scopeForUser($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope a query to only include draft plans.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<TravelPlan>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<TravelPlan>
+     */
+    public function scopeDrafts($query)
+    {
+        return $query->where('status', 'draft');
+    }
+
+    /**
+     * Scope a query to only include planned plans.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<TravelPlan>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<TravelPlan>
+     */
+    public function scopePlanned($query)
+    {
+        return $query->where('status', 'planned');
+    }
+
+    /**
+     * Scope a query to only include completed plans.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<TravelPlan>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<TravelPlan>
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
     }
 
     /**
@@ -174,5 +228,29 @@ class TravelPlan extends Model
     public function getHasAiPlanAttribute(): bool
     {
         return $this->days()->exists();
+    }
+
+    /**
+     * Get the calculated end date based on departure_date and number_of_days.
+     */
+    public function getEndDateAttribute(): ?\Illuminate\Support\Carbon
+    {
+        if ($this->departure_date === null || $this->number_of_days === null) {
+            return null;
+        }
+
+        return $this->departure_date->copy()->addDays($this->number_of_days - 1);
+    }
+
+    /**
+     * Get the total budget for all people.
+     */
+    public function getTotalBudgetAttribute(): ?float
+    {
+        if ($this->budget_per_person === null || $this->number_of_people === null) {
+            return null;
+        }
+
+        return round($this->budget_per_person * $this->number_of_people, 2);
     }
 }
