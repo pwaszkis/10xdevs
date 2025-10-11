@@ -26,3 +26,6 @@ _ide_helper.php
 _ide_helper_models.php
 .ai/prompts
 .ai/priv-instructions
+
+# Status reports (generated)
+MVP-STATUS-REPORT.md

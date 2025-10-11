@@ -129,6 +129,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the name attribute (alias for nickname).
+     * For backwards compatibility and convenience.
+     */
+    public function getNameAttribute(): ?string
+    {
+        return $this->nickname;
+    }
+
+    /**
      * Check if user is admin.
      */
     public function isAdmin(): bool

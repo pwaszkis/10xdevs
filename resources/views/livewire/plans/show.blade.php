@@ -1,15 +1,12 @@
 <div class="plan-details-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    {{-- Header planu --}}
-    <livewire:components.plan-header :plan="$plan" />
-
-    {{-- Sekcja założeń --}}
-    <livewire:components.assumptions-section
-        :userNotes="$plan->user_notes"
-        :preferences="auth()->check() ? (auth()->user()->preferences?->toArray() ?? []) : []"
-    />
-
     {{-- Draft CTA - tylko dla szkiców --}}
     @if($plan->isDraft())
+        {{-- Header planu (prosty HTML dla szkicu) --}}
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ $plan->title }}</h1>
+            <p class="text-gray-600">{{ $plan->destination }} • {{ $plan->number_of_days }} dni • {{ $plan->number_of_people }} {{ $plan->number_of_people == 1 ? 'osoba' : 'osoby' }}</p>
+            <span class="inline-block mt-3 px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full">Szkic</span>
+        </div>
         <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6 text-center">
             <h2 class="text-2xl font-bold text-gray-900 mb-3">
                 Gotowy do wygenerowania planu?
@@ -32,6 +29,15 @@
                 </button>
             </div>
         </div>
+    @else
+        {{-- Header planu i sekcja założeń (z komponentami Livewire dla wygenerowanych planów) --}}
+        <livewire:components.plan-header :plan="$plan" :key="'plan-header-'.$plan->id" />
+
+        <livewire:components.assumptions-section
+            :userNotes="$plan->user_notes"
+            :preferences="auth()->check() ? (auth()->user()->preferences?->toArray() ?? []) : []"
+            :key="'assumptions-'.$plan->id"
+        />
     @endif
 
     {{-- Dni planu (tylko dla generated plans) --}}
@@ -86,6 +92,7 @@
             <livewire:components.feedback-form
                 :travelPlanId="$plan->id"
                 :existingFeedback="$feedback"
+                :key="'feedback-'.$plan->id"
             />
         @endif
 
@@ -94,6 +101,7 @@
             :aiGenerationsRemaining="$aiGenerationsRemaining"
             :hasAiPlan="$plan->has_ai_plan"
             :travelPlanId="$plan->id"
+            :key="'actions-'.$plan->id"
         />
     </div>
 
