@@ -38,7 +38,6 @@ class TravelPlanFactory extends Factory
             'budget_currency' => 'PLN',
             'user_notes' => fake()->paragraph(),
             'status' => 'draft',
-            'has_ai_plan' => false,
         ];
     }
 }

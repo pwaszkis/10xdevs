@@ -96,11 +96,19 @@ class TravelPlan extends Model
     /**
      * Get the feedback for the travel plan.
      *
-     * @return HasOne<Feedback>
+     * @return HasOne<TravelPlanFeedback>
      */
     public function feedback(): HasOne
     {
-        return $this->hasOne(Feedback::class);
+        return $this->hasOne(TravelPlanFeedback::class);
+    }
+
+    /**
+     * Check if plan has feedback.
+     */
+    public function hasFeedback(): bool
+    {
+        return $this->feedback()->exists();
     }
 
     /**

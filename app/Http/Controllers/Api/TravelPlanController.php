@@ -100,7 +100,6 @@ class TravelPlanController extends Controller
                 'travel_plan_id' => $plan->feedback->travel_plan_id,
                 'satisfied' => $plan->feedback->satisfied,
                 'issues' => $plan->feedback->issues,
-                'other_comment' => $plan->feedback->other_comment,
                 'created_at' => $plan->feedback->created_at->toIso8601String(),
             ] : null;
         }

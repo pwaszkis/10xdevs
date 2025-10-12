@@ -10,11 +10,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * Feedback Resource
  *
- * Transforms Feedback model data for API responses.
+ * Transforms TravelPlanFeedback model data for API responses.
  *
- * @property \App\Models\Feedback $resource
+ * @property \App\Models\TravelPlanFeedback $resource
  *
- * @mixin \App\Models\Feedback
+ * @mixin \App\Models\TravelPlanFeedback
  */
 class FeedbackResource extends JsonResource
 {
@@ -31,7 +31,6 @@ class FeedbackResource extends JsonResource
             'travel_plan' => $this->whenLoaded('travelPlan', fn () => ['id' => $this->resource->travelPlan->id, 'title' => $this->resource->travelPlan->title]),
             'satisfied' => $this->resource->satisfied,
             'issues' => $this->resource->issues,
-            'other_comment' => $this->resource->other_comment,
             'created_at' => $this->resource->created_at->toIso8601String(),
             'updated_at' => $this->resource->updated_at->toIso8601String(),
         ];

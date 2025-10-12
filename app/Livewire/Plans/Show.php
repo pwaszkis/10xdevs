@@ -6,7 +6,7 @@ namespace App\Livewire\Plans;
 
 use App\Exceptions\LimitExceededException;
 use App\Jobs\GenerateTravelPlanJob;
-use App\Models\Feedback;
+use App\Models\TravelPlanFeedback;
 use App\Models\TravelPlan;
 use App\Services\LimitService;
 use App\Services\PreferenceService;
@@ -44,7 +44,7 @@ class Show extends Component
     // Properties - Plan data
     public TravelPlan $plan;
 
-    public ?Feedback $feedback = null;
+    public ?TravelPlanFeedback $feedback = null;
 
     // UI State
     public bool $showDeleteModal = false;
