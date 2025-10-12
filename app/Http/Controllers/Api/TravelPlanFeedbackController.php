@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 class TravelPlanFeedbackController extends Controller
 {
     use AuthorizesRequests;
+
     /**
      * Submit or update feedback for a travel plan.
      */

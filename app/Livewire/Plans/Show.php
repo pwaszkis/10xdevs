@@ -6,8 +6,8 @@ namespace App\Livewire\Plans;
 
 use App\Exceptions\LimitExceededException;
 use App\Jobs\GenerateTravelPlanJob;
-use App\Models\TravelPlanFeedback;
 use App\Models\TravelPlan;
+use App\Models\TravelPlanFeedback;
 use App\Services\LimitService;
 use App\Services\PreferenceService;
 use Illuminate\Support\Facades\Auth;
