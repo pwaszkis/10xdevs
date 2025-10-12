@@ -107,3 +107,6 @@ clear:
 	docker compose exec app php artisan config:clear
 	docker compose exec app php artisan route:clear
 	docker compose exec app php artisan view:clear
+
+check-mvp:
+	docker compose run --rm node npx @przeprogramowani/10x-mvp-tracker check-mvp

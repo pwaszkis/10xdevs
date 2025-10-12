@@ -639,6 +639,7 @@ git commit -m "docs: update setup instructions"
 
 ## Documentation
 
+- **[CLAUDE.md](CLAUDE.md)** - 🤖 Claude Code AI agent reference (Docker commands, project structure)
 - **[SETUP.md](SETUP.md)** - Detailed installation and configuration guide
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Command reference card
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide
