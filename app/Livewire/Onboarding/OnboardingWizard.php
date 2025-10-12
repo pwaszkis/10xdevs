@@ -158,6 +158,10 @@ class OnboardingWizard extends Component
 
         if ($this->currentStep < 4) {
             $this->currentStep++;
+            // Clear any validation errors from the previous step
+            $this->resetErrorBag();
+            // Force Livewire to re-render
+            $this->dispatch('stepChanged', step: $this->currentStep);
         }
     }
 
@@ -168,6 +172,10 @@ class OnboardingWizard extends Component
     {
         if ($this->currentStep > 1) {
             $this->currentStep--;
+            // Clear any validation errors from the previous step
+            $this->resetErrorBag();
+            // Force Livewire to re-render
+            $this->dispatch('stepChanged', step: $this->currentStep);
         }
     }
 
@@ -222,16 +230,11 @@ class OnboardingWizard extends Component
      */
     public function completeOnboarding(): void
     {
-        $this->validate($this->rulesForStep(3), $this->messages());
-
         $this->isLoading = true;
 
         try {
             /** @var User $user */
             $user = Auth::user();
-
-            // Save final step data
-            $this->saveStepData();
 
             // Mark onboarding as completed
             $completeAction = new CompleteOnboardingAction;
@@ -269,6 +272,38 @@ class OnboardingWizard extends Component
     }
 
     /**
+     * Set travel pace
+     */
+    public function setTravelPace(string $pace): void
+    {
+        $this->travelPace = $pace;
+    }
+
+    /**
+     * Set budget level
+     */
+    public function setBudgetLevel(string $level): void
+    {
+        $this->budgetLevel = $level;
+    }
+
+    /**
+     * Set transport preference
+     */
+    public function setTransportPreference(string $transport): void
+    {
+        $this->transportPreference = $transport;
+    }
+
+    /**
+     * Set restrictions
+     */
+    public function setRestrictions(string $restrictions): void
+    {
+        $this->restrictions = $restrictions;
+    }
+
+    /**
      * Get available interests
      *
      * @return array<string, string>
@@ -281,7 +316,8 @@ class OnboardingWizard extends Component
     /**
      * Check if can proceed to next step
      */
-    public function getCanProceedProperty(): bool
+    #[\Livewire\Attributes\Computed]
+    public function canProceed(): bool
     {
         return match ($this->currentStep) {
             1 => ! empty($this->nickname) && ! empty($this->homeLocation),

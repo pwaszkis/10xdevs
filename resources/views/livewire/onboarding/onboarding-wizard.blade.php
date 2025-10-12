@@ -3,7 +3,7 @@
     <x-onboarding.progress-bar :current-step="$currentStep" :total-steps="4" />
 
     <!-- Step Content -->
-    <div class="mt-8">
+    <div class="mt-8" wire:key="step-{{ $currentStep }}">
         @if ($currentStep === 1)
             <!-- Step 1: Basic Information -->
             <div>
@@ -23,7 +23,7 @@
                         <input
                             type="text"
                             id="nickname"
-                            wire:model.blur="nickname"
+                            wire:model.live="nickname"
                             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Np. Ania, Bartek..."
                             maxlength="50"
@@ -44,7 +44,7 @@
                         <input
                             type="text"
                             id="homeLocation"
-                            wire:model.blur="homeLocation"
+                            wire:model.live="homeLocation"
                             class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Np. Warszawa, Polska"
                             maxlength="100"
@@ -81,7 +81,7 @@
                         >
                             <input
                                 type="checkbox"
-                                checked="{{ $this->isInterestSelected($key) }}"
+                                @checked($this->isInterestSelected($key))
                                 class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 pointer-events-none"
                                 tabindex="-1"
                                 aria-hidden="true"
@@ -117,7 +117,7 @@
                             @foreach (['spokojne' => 'Spokojne', 'umiarkowane' => 'Umiarkowane', 'intensywne' => 'Intensywne'] as $value => $label)
                                 <button
                                     type="button"
-                                    wire:click="$set('travelPace', '{{ $value }}')"
+                                    wire:click="setTravelPace('{{ $value }}')"
                                     class="p-4 border-2 rounded-lg transition-all duration-200 text-center
                                         {{ $travelPace === $value
                                             ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600'
@@ -143,7 +143,7 @@
                             @foreach (['ekonomiczny' => 'Ekonomiczny', 'standardowy' => 'Standardowy', 'premium' => 'Premium'] as $value => $label)
                                 <button
                                     type="button"
-                                    wire:click="$set('budgetLevel', '{{ $value }}')"
+                                    wire:click="setBudgetLevel('{{ $value }}')"
                                     class="p-4 border-2 rounded-lg transition-all duration-200 text-center
                                         {{ $budgetLevel === $value
                                             ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600'
@@ -169,7 +169,7 @@
                             @foreach (['pieszo_publiczny' => 'Pieszo i publiczny', 'wynajem_auta' => 'Wynajem auta', 'mix' => 'Mix'] as $value => $label)
                                 <button
                                     type="button"
-                                    wire:click="$set('transportPreference', '{{ $value }}')"
+                                    wire:click="setTransportPreference('{{ $value }}')"
                                     class="p-4 border-2 rounded-lg transition-all duration-200 text-center
                                         {{ $transportPreference === $value
                                             ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600'
@@ -195,7 +195,7 @@
                             @foreach (['brak' => 'Brak', 'dieta' => 'Dieta', 'mobilnosc' => 'Mobilność'] as $value => $label)
                                 <button
                                     type="button"
-                                    wire:click="$set('restrictions', '{{ $value }}')"
+                                    wire:click="setRestrictions('{{ $value }}')"
                                     class="p-4 border-2 rounded-lg transition-all duration-200 text-center
                                         {{ $restrictions === $value
                                             ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600'
@@ -265,7 +265,7 @@
     </div>
 
     <!-- Navigation Buttons -->
-    <div class="mt-8 flex justify-between items-center">
+    <div class="mt-8 flex justify-between items-center" wire:key="nav-{{ $currentStep }}">
         @if ($currentStep > 1)
             <button
                 type="button"
@@ -282,8 +282,8 @@
             <button
                 type="button"
                 wire:click="nextStep"
-                class="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                @if(!$this->canProceed) disabled @endif
+                wire:key="next-btn-{{ $currentStep }}"
+                class="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
             >
                 Dalej
             </button>
