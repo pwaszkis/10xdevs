@@ -4,7 +4,7 @@
         <div class="relative flex-1" x-data="{ showTooltip: false }">
             <button
                 @if($this->canExportPdf())
-                    @click="window.open('/api/travel-plans/{{ $travelPlanId }}/pdf', '_blank')"
+                    @click="window.open('{{ route('plans.pdf', $travelPlanId) }}', '_blank')"
                 @else
                     @mouseenter="showTooltip = true"
                     @mouseleave="showTooltip = false"

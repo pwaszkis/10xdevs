@@ -51,7 +51,8 @@ return new class extends Migration
             // Email verification
             $table->timestamp('email_verified_at')->nullable()->comment('Timestamp of email verification, null if unverified');
 
-            // Profile fields (filled during onboarding)
+            // Profile fields
+            $table->string('name', 255)->nullable()->comment('User name from registration');
             $table->string('nickname', 100)->nullable()->comment('User display name, filled during onboarding');
             $table->string('home_location', 255)->nullable()->comment('User home country/city, filled during onboarding');
             $table->string('timezone', 50)->default('UTC')->nullable()->comment('User timezone for date/time display');
@@ -69,6 +70,7 @@ return new class extends Migration
 
             // Timestamps
             $table->timestamps(); // created_at, updated_at
+            $table->softDeletes(); // deleted_at for soft deletes
 
             // Indexes
             // Note: unique index on email created automatically by ->unique()

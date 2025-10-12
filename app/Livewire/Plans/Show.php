@@ -64,15 +64,21 @@ class Show extends Component
 
     public int $aiGenerationsLimit = 10;
 
-    // Lazy loading
-    public int $loadedDaysCount = 3;
-
     /**
      * Mount the component.
      */
-    public function mount(int $id): void
+    public function mount(TravelPlan $plan): void
     {
-        $this->loadPlan($id);
+        // Check authorization
+        if ($plan->user_id !== auth()->id()) {
+            abort(403, 'Ten plan nie należy do Ciebie.');
+        }
+
+        // Load plan with relationships
+        $plan->load(['days.points', 'feedback', 'user.preferences']);
+
+        $this->plan = $plan;
+        $this->feedback = $plan->feedback;
         $this->loadUserContext();
     }
 
@@ -86,23 +92,13 @@ class Show extends Component
     }
 
     /**
-     * Load plan data from database.
+     * Reload plan data from database.
      */
-    protected function loadPlan(int $id): void
+    protected function reloadPlan(): void
     {
-        // Load plan with relationships
-        $plan = TravelPlan::with(['days.points', 'feedback', 'user.preferences'])->find($id);
-
-        if (! $plan) {
-            abort(404, 'Plan nie został znaleziony.');
-        }
-
-        if ($plan->user_id !== auth()->id()) {
-            abort(403, 'Ten plan nie należy do Ciebie.');
-        }
-
-        $this->plan = $plan;
-        $this->feedback = $plan->feedback;
+        $this->plan->load(['days.points', 'feedback', 'user.preferences']);
+        $this->plan->refresh();
+        $this->feedback = $this->plan->feedback;
     }
 
     /**
@@ -281,7 +277,7 @@ class Show extends Component
         if ($aiGeneration->status === 'completed') {
             $this->isGenerating = false;
             $this->generationProgress = 100;
-            $this->loadPlan($this->plan->id);
+            $this->reloadPlan();
             session()->flash('success', 'Plan został pomyślnie wygenerowany!');
         } elseif ($aiGeneration->status === 'failed') {
             $this->isGenerating = false;
@@ -312,17 +308,6 @@ class Show extends Component
 
         // Redirect to PDF endpoint (browser will trigger download)
         return $this->redirect("/api/travel-plans/{$this->plan->id}/pdf", navigate: false);
-    }
-
-    /**
-     * Load more days (lazy loading).
-     */
-    public function loadMoreDays(): void
-    {
-        $this->loadedDaysCount = min(
-            $this->loadedDaysCount + 5,
-            $this->plan->days->count()
-        );
     }
 
     /**

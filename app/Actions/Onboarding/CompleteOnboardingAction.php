@@ -29,7 +29,9 @@ class CompleteOnboardingAction
 
             // Mark onboarding as complete
             $user->update([
+                'onboarding_completed' => true,
                 'onboarding_completed_at' => now(),
+                'onboarding_step' => 4,
             ]);
 
             return $user->fresh(['preferences']);

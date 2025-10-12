@@ -1,43 +1,78 @@
 <?php
 
-use App\Livewire\Plans\CreatePlanForm;
-use App\Livewire\Plans\Show as PlansShow;
+use App\Http\Controllers\Auth\OAuthController;
+use App\Http\Controllers\PlanPdfController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::view('/', 'welcome')->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Guest Routes (Unauthenticated Users Only)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('guest')->group(function () {
+    // Google OAuth Routes
+    Route::get('/auth/google', [OAuthController::class, 'redirectToGoogle'])
+        ->name('auth.google');
+    Route::get('/auth/google/callback', [OAuthController::class, 'handleGoogleCallback'])
+        ->name('auth.google.callback');
 });
 
-// Authentication routes
-require __DIR__.'/auth.php';
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes
+|--------------------------------------------------------------------------
+*/
 
-// Onboarding routes (placeholder for future implementation)
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/onboarding', function () {
-        return 'Onboarding - TODO';
-    })->name('onboarding.index');
+Route::middleware(['auth'])->group(function () {
+    // Profile route (no email verification required)
+    Route::view('profile', 'profile')->name('profile');
+
+    // Onboarding route (requires auth and email verification)
+    Route::get('onboarding', \App\Livewire\Onboarding\OnboardingWizard::class)
+        ->middleware(['verified'])
+        ->name('onboarding');
+
+    // Welcome screen (shown after onboarding completion)
+    Route::get('welcome', \App\Livewire\Welcome::class)
+        ->middleware(['verified'])
+        ->name('welcome');
 });
 
-// Authenticated routes with onboarding completed requirement
+/*
+|--------------------------------------------------------------------------
+| Authenticated & Verified Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware(['auth', 'verified', 'onboarding.completed'])->group(function () {
-    // Travel Plans
-    Route::get('/plans/create', CreatePlanForm::class)->name('plans.create');
-    Route::get('/plans/{travelId}/edit', CreatePlanForm::class)->name('plans.edit');
-    Route::get('/plans/{id}', PlansShow::class)->name('plans.show');
+    // Dashboard requires completed onboarding
+    Route::view('dashboard', 'dashboard')->name('dashboard');
 
-    // Dashboard (placeholder for future implementation)
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    // Travel Plans routes
+    Route::prefix('plans')->name('plans.')->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('dashboard');
+        })->name('index');
+
+        Route::get('/create', \App\Livewire\Plans\CreatePlanForm::class)->name('create');
+        Route::get('/{plan}', \App\Livewire\Plans\Show::class)->name('show');
+        Route::get('/{plan}/pdf', [PlanPdfController::class, 'export'])->name('pdf');
+    });
 });
 
-// ============================================================
-// DEVELOPMENT ONLY - Testing routes without authentication
-// TODO: Remove before production deployment
-// ============================================================
-if (app()->environment(['local', 'development'])) {
-    Route::middleware([\App\Http\Middleware\DevAutoLogin::class])->group(function () {
-        Route::get('/dev/plans/create', CreatePlanForm::class)->name('dev.plans.create');
-        Route::get('/dev/plans/{travelId}/edit', CreatePlanForm::class)->name('dev.plans.edit');
-    });
-}
+/*
+|--------------------------------------------------------------------------
+| Breeze Authentication Routes
+|--------------------------------------------------------------------------
+*/
+
+require __DIR__.'/auth.php';

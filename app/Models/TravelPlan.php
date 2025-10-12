@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $user_notes
  * @property string $status
  * @property bool $has_ai_plan
+ * @property int $pdf_exports_count
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -60,6 +61,7 @@ class TravelPlan extends Model
         'number_of_days' => 'integer',
         'number_of_people' => 'integer',
         'budget_per_person' => 'float',
+        'pdf_exports_count' => 'integer',
         'departure_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -228,6 +230,14 @@ class TravelPlan extends Model
     public function getHasAiPlanAttribute(): bool
     {
         return $this->days()->exists();
+    }
+
+    /**
+     * Get the start date (alias for departure_date).
+     */
+    public function getStartDateAttribute(): ?\Illuminate\Support\Carbon
+    {
+        return $this->departure_date;
     }
 
     /**

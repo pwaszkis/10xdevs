@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register custom middleware aliases
         $middleware->alias([
             'onboarding.completed' => \App\Http\Middleware\EnsureOnboardingCompleted::class,
+            'track.activity' => \App\Http\Middleware\TrackLastActivity::class,
+        ]);
+
+        // Add TrackLastActivity to web middleware group for session tracking
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackLastActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

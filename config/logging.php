@@ -134,6 +134,13 @@ return [
             'days' => 14,
         ],
 
+        'auth' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auth.log'),
+            'level' => 'info',
+            'days' => 30,
+        ],
+
     ],
 
 ];

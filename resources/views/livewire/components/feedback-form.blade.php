@@ -34,26 +34,23 @@
         </div>
     @elseif($this->canSubmitFeedback())
         {{-- Feedback Form --}}
-        <div x-data="{ showForm: @entangle('showForm') }">
+        <div>
             {{-- Toggle Button --}}
-            <button
-                @click="showForm = !showForm"
-                x-show="!showForm"
-                class="feedback-toggle w-full text-left font-medium text-blue-600 hover:text-blue-800 transition flex items-center justify-between"
-            >
-                <span class="text-lg">Oceń ten plan</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                </svg>
-            </button>
+            @if(!$showForm)
+                <button
+                    wire:click="toggleForm"
+                    class="feedback-toggle w-full text-left font-medium text-blue-600 hover:text-blue-800 transition flex items-center justify-between"
+                >
+                    <span class="text-lg">Oceń ten plan</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+            @endif
 
             {{-- Form Content --}}
-            <div
-                x-show="showForm"
-                x-transition
-                class="feedback-form space-y-4"
-                style="display: none;"
-            >
+            @if($showForm)
+                <div class="feedback-form space-y-4">
                 <h3 class="text-lg font-semibold text-gray-900">
                     Czy plan spełnia Twoje oczekiwania?
                 </h3>
@@ -62,16 +59,14 @@
                 <div class="satisfaction-buttons flex gap-4">
                     <button
                         wire:click="$set('satisfied', true)"
-                        class="flex-1 py-3 px-4 rounded-lg border-2 transition"
-                        :class="@js($satisfied === true) ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-500'"
+                        class="flex-1 py-3 px-4 rounded-lg border-2 transition {{ $satisfied === true ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-500' }}"
                     >
                         <span class="text-2xl">👍</span>
                         <span class="block mt-1 font-medium">Tak</span>
                     </button>
                     <button
                         wire:click="$set('satisfied', false)"
-                        class="flex-1 py-3 px-4 rounded-lg border-2 transition"
-                        :class="@js($satisfied === false) ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-red-500'"
+                        class="flex-1 py-3 px-4 rounded-lg border-2 transition {{ $satisfied === false ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-red-500' }}"
                     >
                         <span class="text-2xl">👎</span>
                         <span class="block mt-1 font-medium">Nie</span>
@@ -84,10 +79,7 @@
 
                 {{-- Issues Checkboxes (conditional) --}}
                 @if($satisfied === false)
-                    <div
-                        class="issues-checkboxes space-y-2"
-                        x-transition
-                    >
+                    <div class="issues-checkboxes space-y-2">
                         <p class="text-sm font-medium text-gray-700 mb-2">
                             Co było nie tak? (wybierz wszystkie które pasują)
                         </p>
@@ -110,7 +102,7 @@
 
                         {{-- Other Comment Textarea --}}
                         @if(in_array('inne', $issues))
-                            <div class="mt-3" x-transition>
+                            <div class="mt-3">
                                 <textarea
                                     wire:model.blur="otherComment"
                                     placeholder="Opisz problem..."
@@ -140,13 +132,14 @@
                         <span wire:loading wire:target="submitFeedback">Wysyłanie...</span>
                     </button>
                     <button
-                        @click="showForm = false"
+                        wire:click="toggleForm"
                         class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition"
                     >
                         Anuluj
                     </button>
                 </div>
-            </div>
+                </div>
+            @endif
         </div>
     @endif
 </div>

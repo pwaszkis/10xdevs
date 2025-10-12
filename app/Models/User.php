@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -15,7 +18,10 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $name
  * @property string $email
  * @property \Illuminate\Support\Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
+ * @property string|null $google_id
+ * @property string|null $avatar_url
+ * @property bool $onboarding_completed
  * @property string|null $remember_token
  * @property string|null $nickname
  * @property string|null $home_location
@@ -25,6 +31,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property \Illuminate\Support\Carbon|null $ai_generations_reset_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
  *
@@ -43,10 +50,10 @@ use Laravel\Sanctum\HasApiTokens;
  *
  * @mixin \Eloquent
  */
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -57,6 +64,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'google_id',
+        'avatar_url',
+        'onboarding_completed',
         'nickname',
         'home_location',
         'onboarding_completed_at',
@@ -85,6 +95,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'onboarding_completed' => 'boolean',
             'onboarding_completed_at' => 'datetime',
             'onboarding_step' => 'integer',
             'ai_generations_count_current_month' => 'integer',
@@ -129,12 +140,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the name attribute (alias for nickname).
-     * For backwards compatibility and convenience.
+     * Get the display name (prefers nickname, falls back to name).
      */
-    public function getNameAttribute(): ?string
+    public function getDisplayNameAttribute(): ?string
     {
-        return $this->nickname;
+        return $this->nickname ?? $this->name;
     }
 
     /**
@@ -144,5 +154,47 @@ class User extends Authenticatable
     {
         // TODO: Implement actual admin check logic
         return false;
+    }
+
+    /**
+     * Check if user registered via OAuth.
+     */
+    public function isOAuthUser(): bool
+    {
+        return $this->google_id !== null;
+    }
+
+    /**
+     * Check if user has verified email.
+     */
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    /**
+     * Check if user needs onboarding.
+     */
+    public function needsOnboarding(): bool
+    {
+        return ! $this->onboarding_completed;
+    }
+
+    /**
+     * Mark onboarding as completed.
+     */
+    public function markOnboardingCompleted(): void
+    {
+        $this->update(['onboarding_completed' => true]);
+    }
+
+    /**
+     * Get the user's AI generations.
+     *
+     * @return HasMany<AIGeneration>
+     */
+    public function aiGenerations(): HasMany
+    {
+        return $this->hasMany(AIGeneration::class);
     }
 }

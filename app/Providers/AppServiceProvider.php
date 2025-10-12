@@ -5,7 +5,10 @@ namespace App\Providers;
 use App\Services\OpenAI\MockOpenAIService;
 use App\Services\OpenAI\OpenAIService;
 use App\Services\OpenAI\RealOpenAIService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -58,5 +61,42 @@ class AppServiceProvider extends ServiceProvider
     {
         // Policies are automatically discovered in Laravel 11
         // TravelPlanPolicy will be auto-registered for TravelPlan model
+
+        $this->configureRateLimiting();
+    }
+
+    /**
+     * Configure rate limiting for authentication endpoints.
+     */
+    protected function configureRateLimiting(): void
+    {
+        // Login rate limiting: 5 attempts per 5 minutes
+        RateLimiter::for('login', function (Request $request) {
+            $email = (string) $request->input('email', '');
+            $key = 'login:'.$email.':'.$request->ip();
+
+            return Limit::perMinutes(5, 5)->by($key);
+        });
+
+        // Registration rate limiting: 3 attempts per hour
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perHour(3)->by($request->ip());
+        });
+
+        // Email verification resend: 1 per 5 minutes
+        RateLimiter::for('email-verification', function (Request $request) {
+            $user = $request->user();
+            $userId = $user !== null ? $user->id : $request->ip();
+
+            return Limit::perMinutes(5, 1)->by('email-verify:'.$userId);
+        });
+
+        // Global API rate limit
+        RateLimiter::for('api', function (Request $request) {
+            $user = $request->user();
+            $identifier = $user !== null ? $user->id : $request->ip();
+
+            return Limit::perMinute(60)->by($identifier);
+        });
     }
 }

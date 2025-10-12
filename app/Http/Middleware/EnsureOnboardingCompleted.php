@@ -8,6 +8,11 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Ensure Onboarding Completed Middleware
+ *
+ * Redirects users who haven't completed onboarding to the onboarding flow.
+ */
 class EnsureOnboardingCompleted
 {
     /**
@@ -18,8 +23,8 @@ class EnsureOnboardingCompleted
     public function handle(Request $request, Closure $next): Response
     {
         if (auth()->check() && ! auth()->user()->hasCompletedOnboarding()) {
-            return redirect()->route('onboarding.index')
-                ->with('error', 'Ukończ onboarding, aby uzyskać dostęp do tej strony.');
+            return redirect()->route('onboarding')
+                ->with('info', 'Proszę uzupełnić swój profil.');
         }
 
         return $next($request);

@@ -18,7 +18,37 @@ RUN apt-get update && apt-get install -y \
     libjpeg62-turbo-dev \
     libicu-dev \
     libpq-dev \
+    gnupg \
+    wget \
+    ca-certificates \
+    fonts-liberation \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20.x
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Puppeteer globally as root
+# Set Puppeteer cache to a shared location
+ENV PUPPETEER_CACHE_DIR=/usr/local/share/puppeteer-cache
+RUN npm install -g puppeteer \
+    && mkdir -p $PUPPETEER_CACHE_DIR \
+    && npx puppeteer browsers install chrome \
+    && chmod -R 755 $PUPPETEER_CACHE_DIR
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -42,7 +72,7 @@ RUN pecl install xdebug \
     && docker-php-ext-enable xdebug
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Create system user to run Composer and Artisan Commands
 RUN groupadd -g ${GROUP_ID} www \

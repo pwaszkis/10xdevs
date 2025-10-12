@@ -31,59 +31,21 @@
         </div>
     @else
         {{-- Header planu i sekcja założeń (z komponentami Livewire dla wygenerowanych planów) --}}
-        <livewire:components.plan-header :plan="$plan" :key="'plan-header-'.$plan->id" />
+        <livewire:components.plan-header :plan="$plan" wire:key="plan-header-{{ $plan->id }}" />
 
         <livewire:components.assumptions-section
             :userNotes="$plan->user_notes"
             :preferences="auth()->check() ? (auth()->user()->preferences?->toArray() ?? []) : []"
-            :key="'assumptions-'.$plan->id"
+            wire:key="assumptions-{{ $plan->id }}"
         />
     @endif
 
     {{-- Dni planu (tylko dla generated plans) --}}
     @if($plan->status !== 'draft' && $plan->days->count() > 0)
-        <div class="plan-days-section mb-6">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">
-                Plan dnia po dniu
-            </h2>
-
-            @foreach($plan->days->take($loadedDaysCount) as $index => $day)
-                <livewire:components.plan-day
-                    :day="[
-                        'id' => $day->id,
-                        'day_number' => $day->day_number,
-                        'date' => $day->date->format('Y-m-d'),
-                        'summary' => $day->summary,
-                        'points' => $day->points->map(fn($p) => [
-                            'id' => $p->id,
-                            'order_number' => $p->order_number,
-                            'day_part' => $p->day_part,
-                            'name' => $p->name,
-                            'description' => $p->description,
-                            'justification' => $p->justification,
-                            'duration_minutes' => $p->duration_minutes,
-                            'google_maps_url' => $p->google_maps_url,
-                            'location_lat' => $p->location_lat,
-                            'location_lng' => $p->location_lng,
-                        ])->toArray()
-                    ]"
-                    :expanded="$index === 0 && !request()->header('X-Mobile')"
-                    :isMobile="request()->header('X-Mobile') ? true : false"
-                    :key="'day-'.$day->id"
-                />
-            @endforeach
-
-            @if($plan->days->count() > $loadedDaysCount)
-                <div class="text-center mt-4">
-                    <button
-                        wire:click="loadMoreDays"
-                        class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition"
-                    >
-                        Pokaż więcej dni ({{ $plan->days->count() - $loadedDaysCount }} pozostałych)
-                    </button>
-                </div>
-            @endif
-        </div>
+        <livewire:components.plan-days-list
+            :days="$plan->days"
+            wire:key="plan-days-list-{{ $plan->id }}"
+        />
     @endif
 
     {{-- Footer z akcjami --}}
@@ -92,7 +54,7 @@
             <livewire:components.feedback-form
                 :travelPlanId="$plan->id"
                 :existingFeedback="$feedback"
-                :key="'feedback-'.$plan->id"
+                wire:key="feedback-{{ $plan->id }}-{{ $feedback ? $feedback->id : 'new' }}"
             />
         @endif
 
@@ -101,7 +63,7 @@
             :aiGenerationsRemaining="$aiGenerationsRemaining"
             :hasAiPlan="$plan->has_ai_plan"
             :travelPlanId="$plan->id"
-            :key="'actions-'.$plan->id"
+            wire:key="actions-{{ $plan->id }}-{{ $aiGenerationsRemaining }}"
         />
     </div>
 
