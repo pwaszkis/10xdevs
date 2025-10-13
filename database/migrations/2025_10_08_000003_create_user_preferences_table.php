@@ -48,19 +48,23 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->unique()->comment('User ID, 1:1 relationship with users table');
 
             // Interests (JSON array of selected categories)
-            $table->json('interests_categories')->comment('JSON array of interest categories: ["historia_kultura", "przyroda_outdoor", ...]');
+            $table->json('interests_categories')->nullable()->comment('JSON array of interest categories: ["historia_kultura", "przyroda_outdoor", ...]');
 
             // Practical parameters (ENUM single-select fields)
             $table->enum('travel_pace', ['spokojne', 'umiarkowane', 'intensywne'])
+                ->nullable()
                 ->comment('Travel pace preference: spokojne (relaxed), umiarkowane (moderate), intensywne (intensive)');
 
             $table->enum('budget_level', ['ekonomiczny', 'standardowy', 'premium'])
+                ->nullable()
                 ->comment('Budget level: ekonomiczny (budget), standardowy (standard), premium (luxury)');
 
             $table->enum('transport_preference', ['pieszo_publiczny', 'wynajem_auta', 'mix'])
+                ->nullable()
                 ->comment('Transport preference: pieszo_publiczny (walk+public), wynajem_auta (car rental), mix (mixed)');
 
             $table->enum('restrictions', ['brak', 'dieta', 'mobilnosc'])
+                ->nullable()
                 ->comment('Special restrictions: brak (none), dieta (dietary/vegan), mobilnosc (mobility/accessibility)');
 
             // Timestamps

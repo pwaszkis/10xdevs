@@ -1,5 +1,45 @@
 # Dokument wymagań produktu (PRD) - VibeTravels
 
+**Wersja dokumentu**: 1.1
+**Data aktualizacji**: 2025-10-13
+**Status**: Zaktualizowany względem rzeczywistej implementacji MVP
+
+---
+
+## 🔄 CHANGELOG v1.1 (2025-10-13)
+
+### Kluczowe aktualizacje względem wersji 1.0:
+
+**Język aplikacji** (sekcja 4.3):
+- Ustalono: **Polski** jako główny język aplikacji
+- Landing page w **angielskim** (wymaga decyzji o ujednoliceniu)
+- UI mieszane: polskie wartości w onboarding, angielski landing
+
+**Dashboard - dodatkowa funkcjonalność** (sekcja 3.4):
+- Zaimplementowano funkcję **Search** (filtrowanie po title/destination)
+- Wykracza poza pierwotne wymagania PRD
+
+**Struktura onboardingu** (sekcja 3.2):
+- Faktyczna implementacja: 3 kroki UI + completion action
+- Pierwotny opis: 4 osobne kroki (nieścisłość)
+
+**Zmiany w nawigacji** (sekcja 3.4):
+- Sidebar/Topbar: Używa Laravel Breeze navigation (nie custom komponenty)
+- AI Limit Counter: Backend tracking zaimplementowany, brak UI display
+
+**Komponenty nie zaimplementowane w MVP**:
+- Email Verification Banner (sticky) - używa Breeze default flow
+- Session Timeout Modal - używa Laravel default session handling
+- Skeleton Loaders - brak dedykowanych komponentów
+- Custom 404/403/429 error views - używa Laravel defaults + flash messages
+- Rate Limiting UI - wymóg istnieje, brak UI implementation
+
+**API vs Direct Queries**:
+- Dashboard nie używa API endpoints - bezpośrednie Eloquent queries
+- Plans\Show nie używa API - bezpośrednie Eloquent z relationships
+
+---
+
 ## 1. Przegląd produktu
 
 VibeTravels to aplikacja webowa umożliwiająca użytkownikom tworzenie spersonalizowanych planów podróży przy wykorzystaniu sztucznej inteligencji. Aplikacja przekształca proste notatki i pomysły dotyczące wycieczek w szczegółowe, dzień po dniu harmonogramy zwiedzania, uwzględniające indywidualne preferencje turystyczne, budżet, czas i liczbę uczestników.
@@ -316,7 +356,7 @@ Następujące funkcjonalności NIE będą implementowane w wersji MVP:
 
 ### 4.3 Ograniczenia biznesowe MVP
 
-- Wsparcie językowe: tylko angielski (lub tylko polski - do ustalenia)
+- Wsparcie językowe: **polski** (aplikacja), angielski (landing page) - UI mieszane, wymaga ujednolicenia
 - Grupa docelowa: 100-500 early adopters
 - Limit generowań: 10 miesięcznie bez możliwości zwiększenia (poza ręczną interwencją admina)
 - Brak płatnych planów w MVP

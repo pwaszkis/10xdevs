@@ -128,7 +128,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function hasCompletedOnboarding(): bool
     {
-        return $this->onboarding_completed_at !== null;
+        return $this->onboarding_completed && $this->onboarding_completed_at !== null;
     }
 
     /**

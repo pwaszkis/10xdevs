@@ -1,4 +1,10 @@
 <div class="plan-details-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    {{-- Breadcrumbs --}}
+    <x-breadcrumbs :items="[
+        ['label' => 'Plans', 'url' => route('dashboard')],
+        ['label' => $plan->title, 'url' => '']
+    ]" />
+
     {{-- Draft CTA - tylko dla szkiców --}}
     @if($plan->isDraft())
         {{-- Header planu (prosty HTML dla szkicu) --}}

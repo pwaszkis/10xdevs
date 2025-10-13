@@ -32,18 +32,32 @@ VibeTravels MVP wykorzystuje **mobile-first responsive design** z progresywnym w
 
 #### 2.1.1 Landing Page
 - **Ścieżka**: `/`
-- **Layout**: Guest Layout
+- **Layout**: Dedykowany layout (nie Guest Layout) - `landing.blade.php`
+- **Controller**: `HomeController` - przekierowuje auth users do dashboard, guests widzą landing
 - **Cel**: Prezentacja produktu i zachęcenie do rejestracji
+- **⚠️ JĘZYK**: **ANGIELSKI** (rozbieżność z resztą aplikacji w polskim)
 - **Kluczowe informacje**:
-  - Hero section z value proposition
-  - Feature highlights (AI planning, personalizacja, eksport PDF)
-  - Social proof (opcjonalnie w MVP)
-  - CTA buttons: "Zarejestruj się" / "Zaloguj się"
+  - Hero section: "Plan Your Perfect Trip with AI in Seconds"
+  - Value proposition: Stop spending hours researching
+  - Feature highlights (3 główne):
+    - 🤖 AI-Powered Planning
+    - ⚡ Save Hours of Time
+    - 🎯 Personalized Experience
+  - Additional features (4 dodatkowe):
+    - 📅 Day-by-Day Itineraries
+    - 💰 Budget Tracking
+    - 📱 Export to PDF
+    - 🔄 Regenerate & Refine
+  - How It Works (3 steps)
+  - CTA buttons: "Get Started" / "Log In"
+  - Footer component
 - **Komponenty**:
-  - Hero component z ilustracją
-  - Features grid (3 kolumny desktop, stack mobile)
-  - CTA section
-- **UX/Accessibility**: Skip links, focus management, alt texts dla images
+  - Hero section (gradient background)
+  - Features grid (3 cols desktop, 1 col mobile)
+  - How it works (3-step process)
+  - CTA section (blue background)
+  - Footer component (`components/footer.blade.php`)
+- **UX/Accessibility**: Responsive design, gradient backgrounds, emoji icons
 - **Bezpieczeństwo**: Brak wrażliwych danych, HTTPS enforced
 
 #### 2.1.2 Rejestracja
@@ -97,76 +111,67 @@ VibeTravels MVP wykorzystuje **mobile-first responsive design** z progresywnym w
 
 #### 2.2.1 Onboarding - Full Flow
 - **Ścieżka**: `/onboarding`
-- **Layout**: Onboarding Layout (full-screen)
+- **Layout**: Onboarding Layout (full-screen) - `layouts/onboarding.blade.php`
+- **Component**: `App\Livewire\Onboarding\OnboardingWizard`
 - **Cel**: Zebranie preferencji użytkownika dla personalizacji AI
-- **Struktura**: 4 steps (obowiązkowe, sekwencyjne, no skip)
+- **Struktura**: **3 kroki + completion action** (nie 4 osobne kroki)
+  - ⚠️ **UWAGA**: Step 4 to nie osobny krok UI, tylko akcja `completeOnboarding()`
 
-**Step 1: Dane podstawowe**
+**Step 1: Dane podstawowe** (currentStep = 1)
 - **Kluczowe informacje**:
-  - Progress indicator: "1/4"
-  - Welcome message: "Witaj! Zacznijmy od podstaw"
-  - Pola: Nick (required), Kraj/miasto domowe (required)
+  - Progress indicator: pokazuje 1/4 (ale faktycznie 1/3 + completion)
+  - Pola: Nick (required), Home location (required)
+  - Validation: nickname (max 50), homeLocation (max 100)
 - **Komponenty**:
   - Progress bar component
-  - Text inputs z validation
-  - Sticky footer: "Dalej" button (disabled until valid)
-- **API Integration**: `PATCH /api/users/me/onboarding` (step: 1)
-- **UX/Accessibility**:
-  - role="progressbar" z aria-valuenow="1" aria-valuemax="4"
-  - Clear field labels
-  - Min 44px touch targets dla buttons
+  - Text inputs z wire:model
+  - Computed property `canProceed()` sprawdza czy można iść dalej
+  - Button "Dalej" (disabled based on canProceed)
+- **Metoda**: `nextStep()` → `saveStepData()` → update User model
+- **Database**: Zapisuje do `users` table (nickname, home_location, onboarding_step = 2)
 
-**Step 2: Kategorie zainteresowań**
+**Step 2: Kategorie zainteresowań** (currentStep = 2)
 - **Kluczowe informacje**:
-  - Progress indicator: "2/4"
+  - Progress indicator: 2/4
   - Pytanie: "Co Cię interesuje podczas podróży?"
-  - 7 kategorii (multi-select, min 1 required):
-    - Historia i kultura
-    - Przyroda i outdoor
-    - Gastronomia
-    - Nocne życie i rozrywka
-    - Plaże i relaks
-    - Sporty i aktywności
-    - Sztuka i muzea
+  - 7 kategorii (multi-select, min 1 required) - polskie nazwy:
+    - historia_kultura → "Historia i kultura"
+    - przyroda_outdoor → "Przyroda i outdoor"
+    - gastronomia → "Gastronomia"
+    - nocne_zycie → "Nocne życie i rozrywka"
+    - plaze_relaks → "Plaże i relaks"
+    - sporty_aktywnosci → "Sporty i aktywności"
+    - sztuka_muzea → "Sztuka i muzea"
 - **Komponenty**:
-  - Checkbox grid (3 cols desktop, 1 col mobile)
-  - Każda kategoria: ikona + visible label + checkbox
-  - Selected state: border + background color
-- **API Integration**: `PATCH /api/users/me/onboarding` (step: 2)
-- **UX/Accessibility**:
-  - aria-label dla każdej ikony
-  - Visible text labels (nie tylko ikony)
-  - Checkbox visible (nie hidden)
-  - Validation message jeśli brak selection
+  - Property `interestCategories` (array)
+  - Metoda `toggleInterest(category)` dla multi-select
+  - Validation: min 1 kategoria
+- **Metoda**: `nextStep()` → `saveStepData()` → create/update UserPreference
+- **Database**: Zapisuje do `user_preferences` table (interests_categories JSON)
 
-**Step 3: Parametry praktyczne**
+**Step 3: Parametry praktyczne** (currentStep = 3)
 - **Kluczowe informacje**:
-  - Progress indicator: "3/4"
-  - Pytanie: "Jak planujesz podróżować?"
-  - 4 parametry (single-select each):
-    - Tempo: Spokojne / Umiarkowane / Intensywne
-    - Budżet: Ekonomiczny / Standardowy / Premium
-    - Transport: Pieszo i publiczny / Wynajem auta / Mix
-    - Ograniczenia: Brak / Dieta / Mobilność
+  - Progress indicator: 3/4
+  - 4 parametry (single-select each) - polskie wartości:
+    - Tempo: spokojne / umiarkowane / intensywne
+    - Budżet: ekonomiczny / standardowy / premium
+    - Transport: pieszo_publiczny / wynajem_auta / mix
+    - Ograniczenia: brak / dieta / mobilnosc
 - **Komponenty**:
-  - Radio button groups (4 grupy)
-  - Card-based selection UI
-- **API Integration**: `PATCH /api/users/me/onboarding` (step: 3)
-- **UX/Accessibility**:
-  - role="radiogroup" dla każdej grupy
-  - Clear visual selection state
-  - Sticky footer: "Wstecz" + "Zakończ" buttons
+  - Properties: travelPace, budgetLevel, transportPreference, restrictions
+  - Metody: setTravelPace(), setBudgetLevel(), setTransportPreference(), setRestrictions()
+  - Validation: all 4 required (in:spokojne,umiarkowane,intensywne etc.)
+  - Button "Zakończ" (nie "Dalej")
+- **Metoda**: `nextStep()` → `saveStepData()` → update UserPreference
+- **Database**: Update `user_preferences` (travel_pace, budget_level, transport_preference, restrictions)
 
-**Step 4: Completion**
-- **Kluczowe informacje**:
-  - Progress indicator: "4/4"
-  - Podsumowanie wybranych preferencji
-  - Potwierdzenie completion
-- **Komponenty**:
-  - Summary cards z wybranymi preferencjami
-  - "Zakończ" button (trigger welcome email)
-- **API Integration**: `PATCH /api/users/me/onboarding` (step: 4)
-- **Flow**: Redirect → Welcome Screen → Dashboard
+**Completion** (currentStep = 4 trigger)
+- **Metoda**: `completeOnboarding()` (nie osobny krok UI!)
+- **Action**: `CompleteOnboardingAction->execute($user)`
+  - Update user: onboarding_completed_at = now()
+  - Trigger welcome email (opcjonalnie)
+- **Flow**: Flash success message → Redirect `/welcome`
+- **Database**: Update `users.onboarding_completed_at`
 
 #### 2.2.2 Welcome Screen
 - **Ścieżka**: `/welcome` (post-onboarding)
@@ -188,40 +193,40 @@ VibeTravels MVP wykorzystuje **mobile-first responsive design** z progresywnym w
 
 #### 2.3.1 Dashboard
 - **Ścieżka**: `/dashboard`
-- **Layout**: App Layout (sidebar/topbar + main content)
+- **Layout**: App Layout (sidebar/topbar + main content) - `layouts/app.blade.php`
+- **Component**: `App\Livewire\Dashboard`
 - **Cel**: Centralne miejsce zarządzania planami podróży
 - **Kluczowe informacje**:
-  - Hero section: "Cześć [Nick]! Zaplanuj swoją kolejną przygodę"
-  - Primary CTA: "Stwórz nowy plan"
-  - Lista planów użytkownika (cards)
+  - Hero section: "Cześć [Nick]! Zaplanuj swoją kolejną przygodę" (computed `userNickname()`)
+  - Primary CTA: "Stwórz nowy plan" → route('plans.create')
+  - Lista planów użytkownika (cards) - paginated (20 per page)
   - Quick filters: Wszystkie / Szkice / Zaplanowane / Zrealizowane
-  - Pagination (20 per page)
-  - User stats (opcjonalnie): "Stworzyłeś X planów"
+    - Property `statusFilter` (default: 'all')
+    - Metoda `setFilter(status)` → reset pagination
+  - **⚠️ DODATKOWA FUNKCJA**: Search bar (wykracza poza PRD)
+    - Property `search` (nullable string)
+    - Filtruje po title/destination (LIKE %search%)
 - **Komponenty**:
-  - TravelPlanCard (nested, reusable):
-    - Miniatura destynacji (opcjonalnie)
-    - Tytuł planu
-    - Destynacja
-    - Daty (od-do)
-    - Status badge (Draft/Planned/Completed)
-    - Liczba dni/osób
-    - Hover actions: "Zobacz szczegóły"
-  - Filter buttons (Livewire reactive)
-  - Pagination component (Wire UI)
-  - Empty state (jeśli 0 planów)
-- **API Integration**:
-  - `GET /api/travel-plans` (z query params: status, sort, page)
-  - Cache: 60s, invalidate on create/delete
+  - Computed property `plans()` - paginated query z filterami
+  - Computed property `planCounts()` - count per status dla badges
+  - Computed property `hasPlans()` - check if user has any plans
+  - TravelPlanCard (nested Livewire component):
+    - Props: plan object
+    - Wyświetla: title, destination, dates, status badge, liczba dni/osób
+    - Click → route('plans.show', plan)
+  - Pagination (Livewire WithPagination trait)
+  - Empty state (jeśli hasPlans = false)
+- **API Integration**: Nie używa API - bezpośrednie query Eloquent
+  - `TravelPlan::where('user_id', Auth::id())->orderBy('created_at', 'desc')`
+  - Brak cache w MVP (zawsze fresh data)
 - **UX/Accessibility**:
-  - Card grid: 1 col mobile, 2 cols tablet, 3 cols desktop
-  - Keyboard navigation (Tab przez cards)
-  - aria-label dla filter buttons
-  - Skip link: "Przejdź do listy planów"
+  - Card grid: responsive layout
+  - Filter reactive (auto-reset pagination on change)
+  - Search reactive (auto-reset pagination on change)
 - **Empty State**:
-  - Illustration (podróż/mapa)
   - "Nie masz jeszcze żadnych planów podróży"
   - CTA: "Stwórz swój pierwszy plan"
-- **Bezpieczeństwo**: Row-level security (tylko plany użytkownika)
+- **Bezpieczeństwo**: Row-level security (where user_id = Auth::id())
 
 #### 2.3.2 Tworzenie Planu
 - **Ścieżka**: `/plans/create`
@@ -270,35 +275,35 @@ VibeTravels MVP wykorzystuje **mobile-first responsive design** z progresywnym w
   - AI limit 10/10: Button disabled z tooltipem
   - Form timeout 30s: Error toast + retry
 
-#### 2.3.3 AI Generation Loading
-- **Ścieżka**: `/plans/{id}/generating`
-- **Layout**: App Layout (simplified, no sidebar distractions)
-- **Cel**: Pokazanie postępu generowania AI i polling statusu
+#### 2.3.3 AI Generation Loading (Inline w Plan Details)
+- **Ścieżka**: Brak dedykowanego route - **generowanie odbywa się inline w `/plans/{id}`**
+- **Layout**: App Layout (ten sam widok co Plan Details)
+- **Cel**: Pokazanie postępu generowania AI i polling statusu bez przekierowania
 - **Kluczowe informacje**:
-  - Page title: "Generowanie planu..."
-  - Animated spinner / progress bar
-  - Komunikat: "Generuję plan... To może potrwać do 45 sekund"
-  - Progress percentage (jeśli API zwraca)
-  - Elapsed time counter
-  - Po 90s: "Generowanie trwa dłużej niż zwykle... Proszę czekać."
+  - Inline loading state: "Generowanie planu..." overlayed na planie
+  - Progress bar (estimated, 0-90% based on elapsed time)
+  - Komunikat: "Generowanie planu rozpoczęte. Zajmie to około 30 sekund..."
+  - Brak elapsed time counter w MVP
+  - Flash message po completion/failure
 - **Komponenty**:
-  - Loading spinner component
-  - Progress bar (estimated based on elapsed time)
-  - Status message (dynamic)
+  - Loading state inline w Plans\Show component (property `isGenerating`)
+  - Progress bar (property `generationProgress`)
+  - Status polling via Livewire event (`#[On('poll-generation-status')]`)
 - **API Integration**:
-  - Livewire `wire:poll.3s` → `GET /api/travel-plans/{id}/generation-status`
+  - Polling poprzez `checkGenerationStatus()` method w Show.php
+  - Sprawdza status w bazie: `AIGeneration::find($generationId)->status`
   - Status: pending → processing → completed / failed
 - **Flow**:
-  - Status `completed`: Redirect `/plans/{id}` (+ confetti jeśli pierwszy plan)
-  - Status `failed`: Redirect error screen
-  - Timeout >120s: Error screen
+  - Status `completed`: Reload plan data inline, flash success message
+  - Status `failed`: Stop loading, flash error message
+  - Brak timeoutu >120s w MVP
 - **UX/Accessibility**:
-  - role="status" aria-live="polite"
-  - No cancel button (MVP)
-  - Browser beforeunload warning jeśli user próbuje opuścić
+  - Flash messages dla statusu (success/error)
+  - Brak cancel button (MVP)
+  - Brak beforeunload warning w MVP
 - **Bezpieczeństwo**:
-  - Generation kontynuuje w tle jeśli user opuści stronę
-  - Row-level security check
+  - Generation kontynuuje w tle (queue job)
+  - Row-level security check w Show.php mount()
 
 #### 2.3.4 Szczegóły Planu
 - **Ścieżka**: `/plans/{id}`
@@ -394,202 +399,125 @@ VibeTravels MVP wykorzystuje **mobile-first responsive design** z progresywnym w
   - One feedback per plan (unique constraint)
 - **Edge Case**: Feedback już submitted: Pokazać "Twój feedback: [satisfied/not satisfied]"
 
-#### 2.3.6 Error Screens
+#### 2.3.6 Error Handling (Flash Messages + Laravel Defaults)
 
-**AI Generation Failed**
-- **Ścieżka**: `/plans/{id}/error` (lub inline)
+**AI Generation Failed** (inline w Plans\Show)
+- **Ścieżka**: Brak dedykowanego route - **errors wyświetlane inline jako flash messages**
+- **Implementacja**:
+  - Flash message (session()->flash('error', ...)) w Show.php
+  - Wyświetlane w layouts/app.blade.php jako toast/alert
 - **Kluczowe informacje**:
-  - Icon: Error/warning
-  - "Nie udało się wygenerować planu"
-  - Error message z API (jeśli dostępny)
-  - Buttons:
-    - "Spróbuj ponownie" (primary, nie zużywa limitu)
-    - "Wróć do planu" (secondary, do draft view)
-  - Link: "Zgłoś problem" (mailto support)
-- **UX**: Clear recovery path, nie irytujący tone
+  - Error message: "Wystąpił problem z generowaniem planu. Spróbuj ponownie."
+  - Error z AI: "Generowanie nie powiodło się: {errorMessage}"
+  - Button: "Regeneruj plan" (nie zużywa limitu przy failure)
+- **UX**: Clear recovery path via regenerate button
 
-**404 Not Found**
-- **Ścieżka**: `/404`
-- **Kluczowe informacje**:
-  - "Ten plan nie istnieje lub został usunięty"
-  - Buttons:
-    - "Wróć do Dashboard"
-    - "Stwórz nowy plan"
-- **UX**: Helpful, nie blame user
+**404 Not Found** (Laravel default)
+- **Ścieżka**: Laravel 404 handler - **brak custom view w MVP**
+- **Implementacja**: Używa domyślnego Laravel 404
+- **Możliwa implementacja**: `resources/views/errors/404.blade.php` (nieobecna w MVP)
 
-**429 Rate Limit**
-- **Typ**: Modal (blokujący)
-- **Kluczowe informacje**:
-  - "Zbyt wiele prób. Spróbuj ponownie za [countdown] sekund"
-  - Countdown timer (live update)
-  - Wszystkie przyciski disabled
-  - Modal nie closeable
-- **UX**: Auto-refresh możliwości po countdown
+**403 Forbidden** (Laravel default + inline checks)
+- **Implementacja**:
+  - Show.php: `abort(403, 'Ten plan nie należy do Ciebie.')` w mount()
+  - Laravel 403 handler
+- **Kluczowe informacje**: "Ten plan nie należy do Ciebie."
 
-#### 2.3.7 Profil Użytkownika
+**429 Rate Limit** (NIE ZAIMPLEMENTOWANE w MVP)
+- **Status**: Planowane, nie zaimplementowane
+- **PRD wymóg**: Rate limiting dla login, rejestracja, AI generation
+- **Aktualnie**: Brak UI dla rate limit errors
+
+#### 2.3.7 Profil Użytkownika (Laravel Breeze Integration)
 - **Ścieżka**: `/profile`
 - **Layout**: App Layout
-- **Cel**: Wyświetlenie i edycja danych profilu
+- **Cel**: Wyświetlenie i edycja danych profilu + preferencji turystycznych
+- **⚠️ UWAGA**: Brak osobnego route `/settings` - **edycja preferencji odbywa się w ramach `/profile`**
 - **Kluczowe informacje**:
 
-  **Dane podstawowe**:
-  - Nick (editable)
+  **Dane podstawowe** (Laravel Breeze default):
+  - Nick (editable) - property `nickname` w User model
   - Email (read-only, z oznaczeniem verification status)
-  - Kraj/miasto domowe (editable)
+  - Kraj/miasto domowe (editable) - property `home_location`
+  - Password change (Breeze UpdatePasswordForm)
 
-  **Statystyki**:
+  **Preferencje turystyczne** (zintegrowane w /profile):
+  - Kategorie zainteresowań (multi-select, min 1)
+  - Parametry praktyczne: tempo, budżet, transport, ograniczenia
+  - UI może być podobne do onboarding lub uproszczone
+
+  **Statystyki** (możliwe do dodania):
   - "Stworzyłeś X planów"
   - "Zużyłeś X/10 generowań w tym miesiącu"
-  - Reset date: "1 listopada 2025"
 
   **Actions**:
-  - "Edytuj profil" button
-  - Link do Settings (preferencje)
-  - "Usuń konto" (destructive, hidden za expandem)
+  - "Edytuj profil" button (inline edit mode)
+  - "Usuń konto" (destructive, Breeze DeleteUserForm)
 
-- **Komponenty**:
-  - Profile card component
-  - Edit mode (inline lub modal)
-  - Stats cards
-  - Delete account confirmation modal
-- **API Integration**:
-  - `GET /api/users/me`
-  - `PATCH /api/users/me`
-  - `DELETE /api/users/me` (z confirmation: "DELETE")
+- **Komponenty** (Breeze):
+  - `livewire/profile/update-profile-information-form.blade.php`
+  - `livewire/profile/update-password-form.blade.php`
+  - `livewire/profile/delete-user-form.blade.php`
+- **API Integration**: Laravel Breeze actions + custom UserPreference updates
 - **UX/Accessibility**:
   - Clear edit/view mode distinction
-  - Confirmation modal dla delete (double-check)
-  - Toast success po update
+  - Confirmation modal dla delete
+  - Toast success po update (Breeze default)
 - **Bezpieczeństwo**:
-  - Email nie editable (wymaga re-verification)
+  - Email editable via Breeze (with re-verification flow)
   - Hard delete cascade (GDPR)
-  - Confirmation input: "DELETE"
+  - Password confirmation dla delete account
 
-#### 2.3.8 Ustawienia Preferencji
-- **Ścieżka**: `/settings`
-- **Layout**: App Layout
-- **Cel**: Edycja preferencji turystycznych
-- **Kluczowe informacje**:
-
-  **Kategorie zainteresowań**:
-  - Multi-select (min 1)
-  - 7 kategorii z ikonami
-  - UI analogiczne do onboarding step 2
-
-  **Parametry praktyczne**:
-  - Tempo podróży (radio group)
-  - Budżet (radio group)
-  - Transport (radio group)
-  - Ograniczenia (radio group)
-
-  **Actions**:
-  - "Zapisz zmiany" (primary)
-  - "Anuluj" (secondary, discard changes)
-
-- **Komponenty**:
-  - Preferences form (reuse onboarding components)
-  - Save/Cancel sticky footer
-- **API Integration**:
-  - `GET /api/users/me/preferences`
-  - `PATCH /api/users/me/preferences`
-  - Cache: 1h, invalidate on update
-- **UX/Accessibility**:
-  - Identical UI do onboarding (consistency)
-  - Unsaved changes warning jeśli user próbuje navigate away
-  - Toast success po save
-- **Impact**: Zmiany wpływają na future AI generations
+#### 2.3.8 Ustawienia Preferencji (USUNIĘTO - zintegrowane w /profile)
+- **Status**: Nie zaimplementowano jako osobny route
+- **Implementacja**: Edycja preferencji w ramach `/profile` (sekcja 2.3.7)
+- **Rationale**: MVP simplification - wszystkie user settings w jednym miejscu
 
 ### 2.4 Shared Components (Global)
 
-#### 2.4.1 Email Verification Banner
-- **Lokalizacja**: Top wszystkich authenticated pages
-- **Warunek**: `email_verified_at === null`
-- **Kluczowe informacje**:
-  - Sticky banner (żółty background)
-  - "Twój email nie jest zweryfikowany"
-  - Link: "Wyślij ponownie email weryfikacyjny"
-  - Rate limit: 1 email/5 min (countdown jeśli recently sent)
-- **API Integration**: `POST /api/auth/resend-verification`
-- **UX**: Znika po verification (Livewire reactive)
-- **Accessibility**: role="alert", nie blokuje UI
+#### 2.4.1 Email Verification (Laravel Breeze Default)
+- **Lokalizacja**: Laravel Breeze verification flow
+- **Route**: `/verify-email` (verification.notice)
+- **Implementacja**: Standard Breeze - brak custom banner component w MVP
+- **⚠️ STATUS**: EmailVerificationBanner z UI Plan **NIE ZAIMPLEMENTOWANY**
+- **Aktualnie**: User musi odwiedzić `/verify-email` ręcznie (Breeze default flow)
 
-#### 2.4.2 Session Timeout Modal
-- **Trigger**: Livewire `wire:poll.60s` check session
-- **Warunek**: <5 min do wygaśnięcia (115 min od login)
-- **Kluczowe informacje**:
-  - Modal (non-closeable)
-  - "Sesja wygaśnie za [countdown] minut"
-  - Countdown timer (live)
-  - Button: "Tak, przedłuż sesję"
-- **API Integration**: `POST /api/auth/refresh-session` (custom endpoint)
-- **UX**: Graceful handling, nie traci pracy użytkownika
-- **Accessibility**: Focus trap na button
+#### 2.4.2 Session Timeout Modal (NIE ZAIMPLEMENTOWANE)
+- **⚠️ STATUS**: **NIE ZAIMPLEMENTOWANE w MVP**
+- **PRD wymóg**: Session management (sekcja 3.1)
+- **Aktualnie**: Laravel default session handling (120 min w .env.example)
+- **Brak**: Custom modal, polling, countdown, extend session endpoint
 
-#### 2.4.3 Toast Notifications System
-- **Lokalizacja**: Prawy górny róg (desktop), top center (mobile)
+#### 2.4.3 Toast Notifications System (Flash Messages)
+- **Implementacja**: Laravel session flash messages
+- **Lokalizacja**: Wyświetlane w layouts (app.blade.php, guest.blade.php)
 - **Typy**:
-  - Success (zielony, checkmark icon)
-  - Error (czerwony, X icon)
-  - Warning (pomarańczowy, ! icon)
-  - Info (niebieski, i icon)
-- **Behavior**:
-  - Auto-dismiss: 5 sekund
-  - Max 3 toasts stacked
-  - Newest on top
-  - Slide-in animation
-  - Click to dismiss (opcjonalnie)
-- **Accessibility**:
-  - role="alert"
-  - aria-live="polite"
-  - Screen reader announces
-- **Wire UI Integration**: Wbudowany notifications system
+  - Success: `session()->flash('success', ...)`
+  - Error: `session()->flash('error', ...)`
+- **Wire UI Integration**: Możliwe użycie Wire UI notifications (jeśli zainstalowane)
+- **Aktualnie**: Prosty system flash messages, brak zaawansowanego toast stacku
 
-#### 2.4.4 Sidebar Navigation (Desktop)
-- **Lokalizacja**: Left side, App Layout
+#### 2.4.4 Navigation (Laravel Breeze Integration)
+- **Desktop & Mobile**: Breeze responsive navigation
+- **Component**: `livewire/layout/navigation.blade.php`
+- **⚠️ STATUS**: Dedykowane komponenty Sidebar/Topbar z UI Plan **NIE ZAIMPLEMENTOWANE**
 - **Kluczowe informacje**:
-  - Logo VibeTravels (top)
-  - Navigation links:
-    - Dashboard (home icon)
-    - Profil (user icon)
-    - Ustawienia (gear icon)
-  - AI Limit Counter:
-    - Badge: "Generowania: X/10"
-    - Progress bar (visual)
-    - Kolory: 0-7 zielony, 8-9 pomarańczowy, 10 czerwony
-    - Tooltip: "Reset limitu: 1 listopada 2025"
-  - Logout button (bottom)
-- **Componenty**: Sidebar component (Livewire)
-- **API Integration**: `GET /api/users/me` (AI counter)
-- **UX/Accessibility**:
-  - Active link highlight
-  - Keyboard navigation
-  - role="navigation"
-  - aria-current dla active page
-
-#### 2.4.5 Topbar Navigation (Mobile)
-- **Lokalizacja**: Top, App Layout mobile
-- **Kluczowe informacje**:
-  - Hamburger menu (left)
-  - Logo center (opcjonalnie)
-  - AI limit badge (compact, right)
-- **Hamburger menu expand**:
-  - Full-screen overlay
-  - Navigation links (same as sidebar)
+  - Logo/Brand link
+  - Navigation links (Dashboard, Profile, Settings)
+  - User dropdown (desktop)
+  - Hamburger menu (mobile)
   - Logout button
+- **AI Limit Counter**: **NIE ZAIMPLEMENTOWANY w navigation**
+  - Show.php trackuje `aiGenerationsRemaining` (backend)
+  - Brak UI display w sidebar/topbar
 - **UX/Accessibility**:
-  - Touch-friendly (min 44px)
-  - Focus trap w expanded menu
-  - Escape to close
-  - aria-expanded dla hamburger
+  - Breeze default accessible navigation
+  - Responsive (hamburger mobile, full nav desktop)
 
-#### 2.4.6 Skeleton Loaders
-- **Użycie**: Dashboard plan list, plan details loading
-- **Variants**:
-  - PlanCard skeleton (3 cards, shimmer animation)
-  - PlanDay skeleton (accordion structure)
-  - Profile skeleton
-- **UX**: Pokazuje strukturę przed załadowaniem (lepsze niż spinner)
-- **Accessibility**: aria-busy="true", aria-label="Loading content"
+#### 2.4.5 Skeleton Loaders (NIE ZAIMPLEMENTOWANE)
+- **⚠️ STATUS**: **NIE ZAIMPLEMENTOWANE w MVP**
+- **Aktualnie**: Brak dedykowanych skeleton loader components
+- **Możliwe loading states**: Livewire wire:loading directives, spinners
 
 ## 3. Mapa podróży użytkownika
 
@@ -1503,9 +1431,11 @@ public function plans() {
 - [ ] **Logo**: Custom logo czy placeholder w MVP?
 
 ### 11.2 Localization
-- [ ] **Język MVP**: Polski czy angielski? (CRITICAL DECISION)
-- [ ] **i18n System**: Laravel localization system czy hardcoded strings?
-- [ ] **Tone of voice**: Formal (Pani/Pan) czy informal (Ty)?
+- [x] **Język MVP**: **Polski** (aplikacja główna - onboarding, dashboard, plany), **Angielski** (landing page)
+  - ⚠️ **UWAGA**: Niespójność językowa - wymaga decyzji o ujednoliceniu
+  - Aktualnie: UI używa polskich wartości (spokojne/umiarkowane/intensywne), komunikaty w PL
+- [x] **i18n System**: Hardcoded strings (brak Laravel localization w MVP)
+- [x] **Tone of voice**: Informal (Ty) - widoczne w komunikatach onboardingu
 
 ### 11.3 Analytics
 - [ ] **Tool**: Plausible, custom DB tracking, czy Google Analytics exempt?
@@ -1527,6 +1457,56 @@ public function plans() {
 
 ---
 
+**Dokument Version**: 1.1
+**Data aktualizacji**: 2025-10-13
+**Status**: Zaktualizowany względem rzeczywistej implementacji
+
+---
+
+## CHANGELOG 1.1 (2025-10-13)
+
+### Główne zmiany względem v1.0:
+
+1. **Język aplikacji**: Ustalono polski jako główny (UI, onboarding, komunikaty), landing page w angielskim
+2. **AI Generation Loading**: Usunięto dedykowany route `/plans/{id}/generating` - generowanie inline w Plans\Show
+3. **Error Handling**: Usunięto dedykowane error screens - używa flash messages + Laravel defaults
+4. **Settings**: Brak osobnego route `/settings` - edycja preferencji w ramach `/profile`
+5. **Onboarding**: Uściślono strukturę - 3 kroki UI + completion action (nie 4 osobne kroki)
+6. **Dashboard**: Dodano informację o funkcji Search (wykracza poza PRD)
+7. **Shared Components**: Usunięto opisy niezaimplementowanych komponentów:
+   - EmailVerificationBanner (używa Breeze default)
+   - SessionTimeout Modal (nie zaimplementowano)
+   - Sidebar/Topbar jako osobne komponenty (używa Breeze navigation)
+   - SkeletonLoader (nie zaimplementowano)
+   - AI Limit Counter UI (backend tracking, brak UI display)
+
+### Komponenty zaimplementowane zgodnie z PRD/UI Plan:
+- ✅ Landing Page (angielski, dedykowany layout)
+- ✅ Auth (Laravel Breeze + Google OAuth)
+- ✅ Onboarding Wizard (3 kroki + completion)
+- ✅ Dashboard (z filterami + search)
+- ✅ Create Plan Form
+- ✅ Plan Details (inline generation loading)
+- ✅ Feedback Form
+- ✅ PDF Export
+- ✅ Modals (Delete, Regenerate)
+
+### Komponenty częściowo zaimplementowane lub uproszczone:
+- ⚠️ Profile (Breeze default, może wymagać integracji preferencji)
+- ⚠️ Email Verification (Breeze flow, brak custom banner)
+- ⚠️ Navigation (Breeze default, brak AI counter w UI)
+- ⚠️ Error Screens (flash messages zamiast dedykowanych widoków)
+
+### Komponenty nie zaimplementowane (do rozważenia w przyszłości):
+- ❌ Session Timeout Modal
+- ❌ Email Verification Banner (sticky)
+- ❌ AI Limit Counter w navigation
+- ❌ Skeleton Loaders
+- ❌ Custom 404/403 views
+- ❌ Rate Limit UI (429 errors)
+
+---
+
 **Dokument Version**: 1.0
 **Data**: 2025-01-10
-**Status**: Ready for Development Planning
+**Status**: Initial Planning Document (OUTDATED - see v1.1 above)

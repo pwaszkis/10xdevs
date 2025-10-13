@@ -1,4 +1,9 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    {{-- Breadcrumbs --}}
+    <x-breadcrumbs :items="[
+        ['label' => $editMode ? 'Edit Plan' : 'Create Plan', 'url' => '']
+    ]" />
+
     {{-- Header --}}
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">
