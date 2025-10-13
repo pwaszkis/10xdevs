@@ -33,6 +33,24 @@ class LimitService
     }
 
     /**
+     * Get the monthly generation limit for a user.
+     */
+    public function getMonthlyLimit(int $userId): int
+    {
+        return self::MONTHLY_LIMIT;
+    }
+
+    /**
+     * Get the number of remaining generations for the current month.
+     */
+    public function getRemainingGenerations(int $userId): int
+    {
+        $used = $this->getGenerationCount($userId);
+
+        return max(0, self::MONTHLY_LIMIT - $used);
+    }
+
+    /**
      * Check if user can generate a new plan (hasn't exceeded limit).
      */
     public function canGenerate(int $userId): bool
@@ -95,16 +113,6 @@ class LimitService
     public function getResetDate(): Carbon
     {
         return now()->addMonth()->startOfMonth();
-    }
-
-    /**
-     * Get remaining generations for the month.
-     */
-    public function getRemainingGenerations(int $userId): int
-    {
-        $used = $this->getGenerationCount($userId);
-
-        return max(0, self::MONTHLY_LIMIT - $used);
     }
 
     /**

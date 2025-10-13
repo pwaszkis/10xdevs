@@ -93,8 +93,8 @@ jobs:
       - name: Run PHPStan
         run: ./vendor/bin/phpstan analyse --memory-limit=2G
 
-      - name: Run PHP CS Fixer (check)
-        run: ./vendor/bin/php-cs-fixer fix --dry-run --diff
+      - name: Run Laravel Pint (check)
+        run: ./vendor/bin/pint --test
 
       - name: Run PHP CodeSniffer
         run: ./vendor/bin/phpcs

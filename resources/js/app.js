@@ -28,8 +28,8 @@ Alpine.data('wireui_dropdown', () => ({
         toggle() {
             this.state = !this.state;
             this.open = !this.open;
-        }
-    }
+        },
+    },
 }));
 
 Alpine.data('positionable', () => ({
@@ -46,7 +46,7 @@ Alpine.data('positionable', () => ({
     toggle() {
         this.state = !this.state;
         this.open = !this.open;
-    }
+    },
 }));
 
 Alpine.start();

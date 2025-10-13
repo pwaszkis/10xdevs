@@ -314,4 +314,64 @@ class TravelPlanFeedbackTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_user_can_submit_feedback_with_multiple_issues(): void
+    {
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/travel-plans/{$this->plan->id}/feedback", [
+                'satisfied' => false,
+                'issues' => [
+                    'not_enough_details',
+                    'poor_itinerary_order',
+                    'not_matching_preferences',
+                ],
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'success' => true,
+                'message' => 'Dziękujemy za feedback!',
+            ]);
+
+        $feedback = TravelPlanFeedback::where('travel_plan_id', $this->plan->id)->first();
+        $this->assertNotNull($feedback);
+        $this->assertFalse($feedback->satisfied);
+        $this->assertIsArray($feedback->issues);
+        $this->assertCount(3, $feedback->issues);
+        $this->assertContains('not_enough_details', $feedback->issues);
+        $this->assertContains('poor_itinerary_order', $feedback->issues);
+        $this->assertContains('not_matching_preferences', $feedback->issues);
+    }
+
+    public function test_feedback_calculates_satisfaction_rate(): void
+    {
+        // Create 10 plans with feedback: 7 positive, 3 negative
+        for ($i = 0; $i < 7; $i++) {
+            $plan = TravelPlan::factory()->create([
+                'user_id' => $this->user->id,
+            ]);
+            TravelPlanFeedback::create([
+                'travel_plan_id' => $plan->id,
+                'satisfied' => true,
+                'issues' => null,
+            ]);
+        }
+
+        for ($i = 0; $i < 3; $i++) {
+            $plan = TravelPlan::factory()->create([
+                'user_id' => $this->user->id,
+            ]);
+            TravelPlanFeedback::create([
+                'travel_plan_id' => $plan->id,
+                'satisfied' => false,
+                'issues' => ['not_enough_details'],
+            ]);
+        }
+
+        $service = app(\App\Services\FeedbackService::class);
+        $satisfactionRate = $service->getSatisfactionRate();
+
+        // 7 satisfied out of 10 total = 70%
+        $this->assertEquals(70.0, $satisfactionRate);
+    }
 }

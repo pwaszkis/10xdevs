@@ -66,10 +66,11 @@ class AIGenerationService
             $parsedPlan = $this->parseResponse($response);
 
             // Calculate costs
-            $tokensUsed = $response->usage['total_tokens'] ?? 0;
+            $usage = $response->getUsage();
+            $tokensUsed = $usage['total_tokens'] ?? 0;
             $cost = $this->calculateCost(
-                $response->usage['prompt_tokens'] ?? 0,
-                $response->usage['completion_tokens'] ?? 0
+                $usage['prompt_tokens'] ?? 0,
+                $usage['completion_tokens'] ?? 0
             );
 
             return [
@@ -118,11 +119,18 @@ class AIGenerationService
      */
     private function getSystemPrompt(array $preferences): string
     {
-        $interests = $this->formatInterests($preferences['interests'] ?? []);
+        // Handle interests - can be 'interests' or 'interests_categories' key
+        $interestsValue = $preferences['interests'] ?? $preferences['interests_categories'] ?? [];
+        $interests = $this->formatInterests($interestsValue);
+
         $pace = $preferences['travel_pace'] ?? 'moderate';
         $budget = $preferences['budget_level'] ?? 'standard';
         $transport = $preferences['transport_preference'] ?? 'mixed';
-        $restrictions = $this->formatRestrictions($preferences['restrictions'] ?? []);
+
+        // Handle restrictions - can be string (ENUM from DB) or array
+        $restrictionsValue = $preferences['restrictions'] ?? [];
+        $restrictionsArray = is_array($restrictionsValue) ? $restrictionsValue : [$restrictionsValue];
+        $restrictions = $this->formatRestrictions($restrictionsArray);
 
         return <<<PROMPT
 You are an expert travel planner assistant specialized in creating detailed, personalized travel itineraries.

@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Actions\Logout;
+use App\Services\AuthService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Volt\Component;
 
@@ -10,14 +11,18 @@ new class extends Component
 
     /**
      * Delete the currently authenticated user.
+     * Uses AuthService for GDPR-compliant hard delete with cascade.
      */
-    public function deleteUser(Logout $logout): void
+    public function deleteUser(Logout $logout, AuthService $authService): void
     {
         $this->validate([
             'password' => ['required', 'string', 'current_password'],
         ]);
 
-        tap(Auth::user(), $logout(...))->delete();
+        $user = Auth::user();
+
+        // Use AuthService for proper GDPR-compliant deletion (hard delete with cascade)
+        $authService->deleteAccount($user);
 
         $this->redirect('/');
     }

@@ -25,3 +25,9 @@ parameters:
         # Eloquent relationship return type covariance issues - false positives
         - '#should return .+ but returns .+ \$this\(#'
         - '#Generic type .+ in PHPDoc tag @return does not specify all template types#'
+
+        # Mockery - andThrow() method exists but PHPStan doesn't recognize it
+        - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::andThrow\(\)#'
+
+        # Mockery - MockInterface is compatible with mocked classes in tests
+        - '#Parameter .* of class App\\Services\\AIGenerationService constructor expects App\\Services\\OpenAI\\OpenAIService, Mockery\\MockInterface given#'

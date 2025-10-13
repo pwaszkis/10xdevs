@@ -35,13 +35,6 @@ class UserPreference extends Model
 
     protected $fillable = [
         'user_id',
-        'language',
-        'timezone',
-        'currency',
-        'notifications_enabled',
-        'email_notifications',
-        'push_notifications',
-        'theme',
         'interests_categories',
         'travel_pace',
         'budget_level',
@@ -51,9 +44,6 @@ class UserPreference extends Model
 
     protected $casts = [
         'interests_categories' => 'array',
-        'notifications_enabled' => 'boolean',
-        'email_notifications' => 'boolean',
-        'push_notifications' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

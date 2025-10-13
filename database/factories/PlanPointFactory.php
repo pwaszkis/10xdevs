@@ -28,7 +28,7 @@ class PlanPointFactory extends Factory
         return [
             'plan_day_id' => PlanDay::factory(),
             'order_number' => fake()->numberBetween(1, 10),
-            'day_part' => fake()->randomElement(['rano', 'poludnie', 'popołudnie', 'wieczór']),
+            'day_part' => fake()->randomElement(['rano', 'poludnie', 'popoludnie', 'wieczor']),
             'name' => fake()->words(3, true),
             'description' => fake()->paragraph(),
             'justification' => fake()->sentence(),
