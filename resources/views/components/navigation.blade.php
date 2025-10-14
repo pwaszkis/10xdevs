@@ -1,21 +1,3 @@
-<?php
-
-use App\Livewire\Actions\Logout;
-use Livewire\Volt\Component;
-
-new class extends Component
-{
-    /**
-     * Log the current user out of the application.
-     */
-    public function logout(Logout $logout): void
-    {
-        $logout();
-
-        $this->redirect('/');
-    }
-}; ?>
-
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,11 +59,14 @@ new class extends Component
                         </div>
 
                         <!-- Authentication -->
-                        <button wire:click="logout" class="w-full text-start">
-                            <x-dropdown-link>
-                                Wyloguj
-                            </x-dropdown-link>
-                        </button>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-start">
+                                <x-dropdown-link>
+                                    Wyloguj
+                                </x-dropdown-link>
+                            </button>
+                        </form>
                     </x-slot>
                 </x-dropdown>
             </div>
@@ -139,11 +124,14 @@ new class extends Component
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
-                <button wire:click="logout" class="w-full text-start">
-                    <x-responsive-nav-link>
-                        Wyloguj
-                    </x-responsive-nav-link>
-                </button>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full text-start">
+                        <x-responsive-nav-link>
+                            Wyloguj
+                        </x-responsive-nav-link>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
