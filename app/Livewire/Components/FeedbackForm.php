@@ -123,7 +123,7 @@ class FeedbackForm extends Component
 
         // If 'other' is selected and there's a comment, append it
         if (in_array(SubmitFeedbackRequest::ISSUE_OTHER, $mappedIssues, true) && $this->otherComment) {
-            $mappedIssues[] = 'other: '.strip_tags($this->otherComment);
+            $mappedIssues[] = 'other: ' . strip_tags($this->otherComment);
         }
 
         return $mappedIssues;

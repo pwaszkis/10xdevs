@@ -95,8 +95,8 @@ class CreateTestUser extends Command
 
         $this->newLine();
         $this->info('🔗 You can now test at:');
-        $this->line('   - Create Plan: '.url('/dev/plans/create'));
-        $this->line('   - Login: Email='.$email.', Password='.$password);
+        $this->line('   - Create Plan: ' . url('/dev/plans/create'));
+        $this->line('   - Login: Email=' . $email . ', Password=' . $password);
 
         return Command::SUCCESS;
     }

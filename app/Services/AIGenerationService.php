@@ -79,7 +79,6 @@ class AIGenerationService
                 'cost' => $cost,
                 'duration' => $duration,
             ];
-
         } catch (OpenAITimeoutException $e) {
             Log::error('AI generation timeout', [
                 'travel_id' => $travel->id,

@@ -113,11 +113,11 @@ class AuthorizationTest extends TestCase
     public function test_csrf_protection_is_enabled(): void
     {
         $this->markTestSkipped(
-            'CSRF protection is automatically enabled by Laravel via VerifyCsrfToken middleware. '.
-            'Testing CSRF in feature tests with Livewire components is complex. '.
-            'CSRF is best verified through: '.
-            '1. Checking middleware configuration in bootstrap/app.php, '.
-            '2. Manual testing with browser dev tools, '.
+            'CSRF protection is automatically enabled by Laravel via VerifyCsrfToken middleware. ' .
+            'Testing CSRF in feature tests with Livewire components is complex. ' .
+            'CSRF is best verified through: ' .
+            '1. Checking middleware configuration in bootstrap/app.php, ' .
+            '2. Manual testing with browser dev tools, ' .
             '3. E2E tests with actual form submissions.'
         );
     }

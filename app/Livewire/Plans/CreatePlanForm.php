@@ -149,8 +149,7 @@ class CreatePlanForm extends Component
                 : $this->travelService->create($planData);
 
             // Redirect using JavaScript
-            $this->js("window.location.href = '".route('plans.show', $travel->id)."'");
-
+            $this->js("window.location.href = '" . route('plans.show', $travel->id) . "'");
         } catch (\Exception $e) {
             $this->handleSaveError($e);
         }
@@ -208,8 +207,7 @@ class CreatePlanForm extends Component
             }
 
             // Redirect using JavaScript
-            $this->js("window.location.href = '".route('plans.show', $travel->id)."'");
-
+            $this->js("window.location.href = '" . route('plans.show', $travel->id) . "'");
         } catch (LimitExceededException $e) {
             $this->handleLimitError($e);
         } catch (\Exception $e) {
@@ -336,8 +334,8 @@ class CreatePlanForm extends Component
         $resetDate = $this->limitService->getResetDate()->translatedFormat('j F Y');
 
         return "Osiągnąłeś limit {$this->generationsLimit} generowań w tym miesiącu. "
-            ."Limit odnowi się {$resetDate}. "
-            .'Możesz nadal zapisywać szkice planów.';
+            . "Limit odnowi się {$resetDate}. "
+            . 'Możesz nadal zapisywać szkice planów.';
     }
 
     // ==================== ERROR HANDLERS ====================

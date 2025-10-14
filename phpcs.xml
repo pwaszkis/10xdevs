@@ -30,6 +30,17 @@
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
 
+    <!-- Allow long lines in specific files -->
+    <rule ref="Generic.Files.LineLength.TooLong">
+        <exclude-pattern>app/Services/OpenAI/Schemas/*</exclude-pattern>
+        <exclude-pattern>app/Http/Resources/*</exclude-pattern>
+    </rule>
+
+    <!-- Allow snake_case test method names (PHPUnit/Laravel convention) -->
+    <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+
     <!-- Ignore specific rules for migrations -->
     <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
         <exclude-pattern>database/migrations/*</exclude-pattern>

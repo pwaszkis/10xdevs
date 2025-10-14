@@ -39,11 +39,11 @@ class RateLimitingTest extends TestCase
     public function test_login_is_rate_limited_after_5_failed_attempts(): void
     {
         $this->markTestSkipped(
-            'Login rate limiting is implemented in LoginForm (see app/Livewire/Forms/LoginForm.php:49). '.
-            'Testing Livewire Volt components with ValidationExceptions in loops is complex. '.
-            'Rate limiting logic is verified via: '.
-            '1. Code review of LoginForm::ensureIsNotRateLimited() method, '.
-            '2. Manual testing via browser, '.
+            'Login rate limiting is implemented in LoginForm (see app/Livewire/Forms/LoginForm.php:49). ' .
+            'Testing Livewire Volt components with ValidationExceptions in loops is complex. ' .
+            'Rate limiting logic is verified via: ' .
+            '1. Code review of LoginForm::ensureIsNotRateLimited() method, ' .
+            '2. Manual testing via browser, ' .
             '3. Integration/E2E tests.'
         );
     }
@@ -61,8 +61,8 @@ class RateLimitingTest extends TestCase
     public function test_registration_is_rate_limited(): void
     {
         $this->markTestSkipped(
-            'Registration rate limiting not yet implemented. '.
-            'Requires adding throttle middleware to /register route or '.
+            'Registration rate limiting not yet implemented. ' .
+            'Requires adding throttle middleware to /register route or ' .
             'implementing RateLimiter in Livewire register component.'
         );
     }

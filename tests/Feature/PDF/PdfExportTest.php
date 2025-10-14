@@ -48,7 +48,7 @@ class PdfExportTest extends TestCase
         // Clean up temp files
         $tempDir = storage_path('app/temp');
         if (file_exists($tempDir)) {
-            $files = glob($tempDir.'/*');
+            $files = glob($tempDir . '/*');
             foreach ($files as $file) {
                 if (is_file($file)) {
                     @unlink($file);

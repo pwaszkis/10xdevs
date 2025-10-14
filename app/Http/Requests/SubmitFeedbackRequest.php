@@ -52,7 +52,7 @@ class SubmitFeedbackRequest extends FormRequest
             'issues' => 'array|required_if:satisfied,false',
             'issues.*' => [
                 'string',
-                'in:'.implode(',', self::ALLOWED_ISSUES),
+                'in:' . implode(',', self::ALLOWED_ISSUES),
             ],
             'other_comment' => 'nullable|string|max:1000',
         ];
@@ -93,7 +93,7 @@ class SubmitFeedbackRequest extends FormRequest
 
             // If 'other' is selected and there's a comment, include it
             if (in_array(self::ISSUE_OTHER, $issues, true) && $this->filled('other_comment')) {
-                $issues[] = 'other: '.strip_tags((string) $this->other_comment);
+                $issues[] = 'other: ' . strip_tags((string) $this->other_comment);
             }
 
             $data['issues'] = $issues;

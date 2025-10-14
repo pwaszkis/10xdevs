@@ -34,8 +34,8 @@ class SessionManagementTest extends TestCase
     public function test_session_expires_after_inactivity(): void
     {
         $this->markTestSkipped(
-            'Session expiration testing requires Carbon::setTestNow() or similar time manipulation. '.
-            'Laravel session middleware handles expiration automatically based on config/session.php. '.
+            'Session expiration testing requires Carbon::setTestNow() or similar time manipulation. ' .
+            'Laravel session middleware handles expiration automatically based on config/session.php. ' .
             'This is tested through integration/E2E tests or manual verification.'
         );
     }
@@ -89,9 +89,9 @@ class SessionManagementTest extends TestCase
     public function test_logout_destroys_session(): void
     {
         $this->markTestSkipped(
-            'Logout functionality is implemented in Livewire navigation component. '.
-            'Testing requires interacting with the navigation Volt component: '.
-            'Volt::test(\'layout.navigation\')->call(\'logout\'). '.
+            'Logout functionality is implemented in Livewire navigation component. ' .
+            'Testing requires interacting with the navigation Volt component: ' .
+            'Volt::test(\'layout.navigation\')->call(\'logout\'). ' .
             'Basic logout functionality is tested in AuthenticationTest.'
         );
     }

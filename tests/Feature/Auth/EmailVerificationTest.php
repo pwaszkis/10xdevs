@@ -40,7 +40,7 @@ class EmailVerificationTest extends TestCase
 
         Event::assertDispatched(Verified::class);
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
-        $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+        $response->assertRedirect(route('dashboard', absolute: false) . '?verified=1');
     }
 
     public function test_email_is_not_verified_with_invalid_hash(): void
@@ -99,10 +99,10 @@ class EmailVerificationTest extends TestCase
     public function test_resend_verification_email_is_rate_limited(): void
     {
         $this->markTestSkipped(
-            'Email verification resend may be handled via Livewire Volt component. '.
-            'Rate limiting for email resend requires either: '.
-            '1. Adding throttle middleware to route, '.
-            '2. Implementing RateLimiter in Livewire component, '.
+            'Email verification resend may be handled via Livewire Volt component. ' .
+            'Rate limiting for email resend requires either: ' .
+            '1. Adding throttle middleware to route, ' .
+            '2. Implementing RateLimiter in Livewire component, ' .
             '3. Testing through Volt component with proper Livewire testing.'
         );
     }

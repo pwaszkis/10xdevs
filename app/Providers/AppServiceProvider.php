@@ -73,7 +73,7 @@ class AppServiceProvider extends ServiceProvider
         // Login rate limiting: 5 attempts per 5 minutes
         RateLimiter::for('login', function (Request $request) {
             $email = (string) $request->input('email', '');
-            $key = 'login:'.$email.':'.$request->ip();
+            $key = 'login:' . $email . ':' . $request->ip();
 
             return Limit::perMinutes(5, 5)->by($key);
         });
@@ -88,7 +88,7 @@ class AppServiceProvider extends ServiceProvider
             $user = $request->user();
             $userId = $user !== null ? $user->id : $request->ip();
 
-            return Limit::perMinutes(5, 1)->by('email-verify:'.$userId);
+            return Limit::perMinutes(5, 1)->by('email-verify:' . $userId);
         });
 
         // Global API rate limit

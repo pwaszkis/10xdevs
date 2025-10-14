@@ -29,7 +29,10 @@ use Throwable;
  */
 class GenerateTravelPlanJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * Maximum execution time in seconds (2 minutes).
@@ -112,9 +115,8 @@ class GenerateTravelPlanJob implements ShouldQueue
                 'travel_plan_id' => $this->travelPlanId,
                 'tokens' => $result['tokens'],
                 'cost' => $result['cost'],
-                'duration' => $result['duration'].'s',
+                'duration' => $result['duration'] . 's',
             ]);
-
         } catch (OpenAIException $e) {
             $this->handleFailure($travelPlan, $aiGeneration, $e);
             throw $e;
@@ -157,7 +159,7 @@ class GenerateTravelPlanJob implements ShouldQueue
                         'plan_day_id' => $planDay->id,
                         'order_number' => $index + 1,
                         'day_part' => $this->determineDayPart($activityData['time'] ?? null),
-                        'name' => $activityData['activity'] ?? 'Activity '.($index + 1),
+                        'name' => $activityData['activity'] ?? 'Activity ' . ($index + 1),
                         'description' => $activityData['activity'] ?? 'Activity description',
                         'justification' => null, // AI doesn't provide this in current schema
                         'duration_minutes' => $activityData['duration_minutes'] ?? 60,

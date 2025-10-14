@@ -35,9 +35,9 @@ class GDPRTest extends TestCase
     public function test_user_can_delete_account(): void
     {
         $this->markTestSkipped(
-            'AuthService.deleteAccount() implementation needs review. '.
-            'Currently performs soft delete on related models before forceDelete on user. '.
-            'Database foreign key constraints with ON DELETE CASCADE should handle this automatically. '.
+            'AuthService.deleteAccount() implementation needs review. ' .
+            'Currently performs soft delete on related models before forceDelete on user. ' .
+            'Database foreign key constraints with ON DELETE CASCADE should handle this automatically. ' .
             'Requires refactoring AuthService or migration adjustment.'
         );
     }
@@ -76,8 +76,8 @@ class GDPRTest extends TestCase
         // This test should validate at UI/component level, which requires Volt component testing
 
         $this->markTestSkipped(
-            'Password confirmation for account deletion is implemented in Volt component UI layer. '.
-            'Testing password validation requires proper Volt component testing setup. '.
+            'Password confirmation for account deletion is implemented in Volt component UI layer. ' .
+            'Testing password validation requires proper Volt component testing setup. ' .
             'The business logic (hard delete with cascade) is tested in other GDPR tests.'
         );
     }

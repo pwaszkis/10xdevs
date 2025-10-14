@@ -154,7 +154,7 @@ class MockOpenAIService implements OpenAIService
         };
 
         return [
-            'id' => 'chatcmpl-mock-'.Str::random(10),
+            'id' => 'chatcmpl-mock-' . Str::random(10),
             'object' => 'chat.completion',
             'created' => time(),
             'model' => $payload['model'],
@@ -184,12 +184,12 @@ class MockOpenAIService implements OpenAIService
      */
     private function generateTextMockResponse(array $payload): array
     {
-        $mockContent = 'This is a mock response from the OpenAI service. '.
-                      'In production, this would be a real AI-generated response. '.
-                      'Your request had '.count($payload['messages']).' messages.';
+        $mockContent = 'This is a mock response from the OpenAI service. ' .
+                      'In production, this would be a real AI-generated response. ' .
+                      'Your request had ' . count($payload['messages']) . ' messages.';
 
         return [
-            'id' => 'chatcmpl-mock-'.Str::random(10),
+            'id' => 'chatcmpl-mock-' . Str::random(10),
             'object' => 'chat.completion',
             'created' => time(),
             'model' => $payload['model'],

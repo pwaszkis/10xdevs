@@ -21,7 +21,7 @@ if (! function_exists('create_test_plan')) {
 
         return $service->create([
             'user_id' => $userId,
-            'title' => 'Test Plan - '.now()->format('Y-m-d H:i'),
+            'title' => 'Test Plan - ' . now()->format('Y-m-d H:i'),
             'destination' => fake()->randomElement(['Paryż', 'Rzym', 'Barcelona', 'Lizbona', 'Berlin']),
             'departure_date' => now()->addDays(rand(7, 30))->format('Y-m-d'),
             'number_of_days' => rand(3, 10),

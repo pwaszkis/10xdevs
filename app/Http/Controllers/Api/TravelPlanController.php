@@ -244,7 +244,7 @@ class TravelPlanController extends Controller
                 $nested = $parts[0];
 
                 for ($i = 1; $i < count($parts); $i++) {
-                    $nested .= '.'.$parts[$i];
+                    $nested .= '.' . $parts[$i];
                     $relationships[] = $nested;
                 }
             } else {

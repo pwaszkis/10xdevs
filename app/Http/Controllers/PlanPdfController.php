@@ -36,7 +36,7 @@ class PlanPdfController extends Controller
         $filename = $this->generateFilename($plan);
 
         // Generate PDF and save to temporary file
-        $tempPath = storage_path('app/temp/'.$filename);
+        $tempPath = storage_path('app/temp/' . $filename);
 
         // Ensure temp directory exists
         if (! file_exists(storage_path('app/temp'))) {

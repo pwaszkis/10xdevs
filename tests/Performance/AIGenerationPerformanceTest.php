@@ -54,7 +54,7 @@ class AIGenerationPerformanceTest extends TestCase
         // Skip if using mock API (can't measure real performance)
         if (config('ai.use_real_api') !== true) {
             $this->markTestSkipped(
-                'This test requires AI_USE_REAL_API=true in .env. '.
+                'This test requires AI_USE_REAL_API=true in .env. ' .
                 'Skipped because mock API cannot measure real performance.'
             );
         }
@@ -108,7 +108,7 @@ class AIGenerationPerformanceTest extends TestCase
 
         // Log duration for monitoring
         $this->addToAssertionCount(1); // Count as assertion
-        fwrite(STDOUT, "\n[PERFORMANCE] AI Generation completed in ".round($duration, 2)."s\n");
+        fwrite(STDOUT, "\n[PERFORMANCE] AI Generation completed in " . round($duration, 2) . "s\n");
     }
 
     /**
@@ -155,7 +155,7 @@ class AIGenerationPerformanceTest extends TestCase
         );
 
         // Log duration for monitoring
-        fwrite(STDOUT, "\n[PERFORMANCE] Dashboard with 100 plans loaded in ".round($duration, 2)."s\n");
+        fwrite(STDOUT, "\n[PERFORMANCE] Dashboard with 100 plans loaded in " . round($duration, 2) . "s\n");
     }
 
     /**
@@ -237,7 +237,7 @@ class AIGenerationPerformanceTest extends TestCase
         $response->assertSee($plan->destination);
 
         // Log duration for monitoring
-        fwrite(STDOUT, "\n[PERFORMANCE] Plan view with 30 days (180 points) loaded in ".round($duration, 2)."s\n");
+        fwrite(STDOUT, "\n[PERFORMANCE] Plan view with 30 days (180 points) loaded in " . round($duration, 2) . "s\n");
     }
 
     /**
@@ -279,6 +279,6 @@ class AIGenerationPerformanceTest extends TestCase
         );
 
         // Log for monitoring
-        fwrite(STDOUT, "\n[PERFORMANCE] Dashboard (50 plans) loaded in ".round($duration, 2)."s\n");
+        fwrite(STDOUT, "\n[PERFORMANCE] Dashboard (50 plans) loaded in " . round($duration, 2) . "s\n");
     }
 }

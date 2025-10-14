@@ -238,7 +238,6 @@ class Show extends Component
             $this->aiGenerationsRemaining = $this->getUserAiGenerationsRemaining();
 
             session()->flash('success', 'Generowanie planu rozpoczęte. Zajmie to około 30 sekund...');
-
         } catch (LimitExceededException $e) {
             $this->isGenerating = false;
             session()->flash('error', $e->getMessage());

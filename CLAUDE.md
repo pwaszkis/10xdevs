@@ -71,9 +71,15 @@ make phpstan
 make cs-fix
 # or: docker compose exec app ./vendor/bin/pint
 
-# Check code style
+# Check code style (Pint)
 make cs-check
 # or: docker compose exec app ./vendor/bin/pint --test
+
+# Check PSR-12 compliance (PHPCS)
+docker compose exec app ./vendor/bin/phpcs
+
+# Auto-fix PSR-12 violations (PHPCBF)
+docker compose exec app ./vendor/bin/phpcbf
 
 # Run all quality checks
 make quality

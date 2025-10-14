@@ -77,7 +77,7 @@ class LimitService
 
             if ($count >= self::MONTHLY_LIMIT) {
                 throw new LimitExceededException(
-                    'Monthly generation limit of '.self::MONTHLY_LIMIT.' exceeded'
+                    'Monthly generation limit of ' . self::MONTHLY_LIMIT . ' exceeded'
                 );
             }
 

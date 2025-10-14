@@ -93,8 +93,8 @@ class Dashboard extends Component
         // Apply search filter
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('title', 'like', '%'.$this->search.'%')
-                    ->orWhere('destination', 'like', '%'.$this->search.'%');
+                $q->where('title', 'like', '%' . $this->search . '%')
+                    ->orWhere('destination', 'like', '%' . $this->search . '%');
             });
         }
 

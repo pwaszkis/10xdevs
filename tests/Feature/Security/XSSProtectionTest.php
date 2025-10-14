@@ -39,9 +39,9 @@ class XSSProtectionTest extends TestCase
     public function test_user_input_is_sanitized_in_plan_creation(): void
     {
         $this->markTestSkipped(
-            'Laravel does not sanitize HTML on input/storage by design. '.
-            'XSS protection is handled at the output layer via Blade {{ }} escaping. '.
-            'See test_rendered_plan_content_escapes_html() for output escaping test. '.
+            'Laravel does not sanitize HTML on input/storage by design. ' .
+            'XSS protection is handled at the output layer via Blade {{ }} escaping. ' .
+            'See test_rendered_plan_content_escapes_html() for output escaping test. ' .
             'Input sanitization would require additional package like HTMLPurifier.'
         );
     }

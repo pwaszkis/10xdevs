@@ -64,7 +64,6 @@ class OAuthController extends Controller
 
             return redirect()->route('dashboard')
                 ->with('success', 'Welcome back!');
-
         } catch (\Exception $e) {
             Log::channel('auth')->error('Google OAuth failed', [
                 'error' => $e->getMessage(),

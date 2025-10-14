@@ -114,7 +114,7 @@ class OnboardingWizard extends Component
             ],
             2 => [
                 'interestCategories' => 'required|array|min:1',
-                'interestCategories.*' => 'string|in:'.implode(',', array_keys($this->availableInterests)),
+                'interestCategories.*' => 'string|in:' . implode(',', array_keys($this->availableInterests)),
             ],
             3 => [
                 'travelPace' => 'required|in:spokojne,umiarkowane,intensywne',

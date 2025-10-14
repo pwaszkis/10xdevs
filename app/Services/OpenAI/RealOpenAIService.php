@@ -98,10 +98,10 @@ class RealOpenAIService implements OpenAIService
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders([
-                    'Authorization' => 'Bearer '.$this->apiKey,
+                    'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',
                 ])
-                ->post(self::API_BASE_URL.'/chat/completions', $payload);
+                ->post(self::API_BASE_URL . '/chat/completions', $payload);
 
             // Handle errors
             if ($response->status() === 401) {
@@ -121,7 +121,7 @@ class RealOpenAIService implements OpenAIService
             if ($response->status() === 400) {
                 $errorMessage = $response->json()['error']['message'] ?? 'Unknown error';
                 throw new OpenAIInvalidRequestException(
-                    'Invalid request: '.$errorMessage,
+                    'Invalid request: ' . $errorMessage,
                     400
                 );
             }
@@ -135,13 +135,12 @@ class RealOpenAIService implements OpenAIService
 
             if (! $response->successful()) {
                 throw new OpenAIServerException(
-                    'Unexpected error: '.$response->body(),
+                    'Unexpected error: ' . $response->body(),
                     $response->status()
                 );
             }
 
             return $response->json();
-
         } catch (ConnectionException $e) {
             if (str_contains($e->getMessage(), 'timed out')) {
                 throw new OpenAITimeoutException(
@@ -152,7 +151,7 @@ class RealOpenAIService implements OpenAIService
             }
 
             throw new OpenAINetworkException(
-                'Network error: '.$e->getMessage(),
+                'Network error: ' . $e->getMessage(),
                 0,
                 $e
             );
@@ -225,7 +224,7 @@ class RealOpenAIService implements OpenAIService
         Log::channel('openai')->info('OpenAI Response', [
             'id' => $response['id'],
             'model' => $response['model'],
-            'duration' => round($duration, 2).'s',
+            'duration' => round($duration, 2) . 's',
             'tokens' => $response['usage']['total_tokens'],
             'finish_reason' => $response['choices'][0]['finish_reason'],
         ]);

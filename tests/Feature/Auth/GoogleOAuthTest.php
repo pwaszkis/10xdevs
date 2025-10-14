@@ -47,11 +47,11 @@ class GoogleOAuthTest extends TestCase
     public function test_new_user_can_register_with_google(): void
     {
         $this->markTestSkipped(
-            'Google OAuth testing requires proper Socialite mock setup with stateless() driver. '.
-            'Controller uses: Socialite::driver(\'google\')->stateless()->user(). '.
-            'This is best tested through: '.
-            '1. Integration tests with OAuth test server, '.
-            '2. Manual testing with real Google OAuth, '.
+            'Google OAuth testing requires proper Socialite mock setup with stateless() driver. ' .
+            'Controller uses: Socialite::driver(\'google\')->stateless()->user(). ' .
+            'This is best tested through: ' .
+            '1. Integration tests with OAuth test server, ' .
+            '2. Manual testing with real Google OAuth, ' .
             '3. E2E tests with browser automation.'
         );
     }

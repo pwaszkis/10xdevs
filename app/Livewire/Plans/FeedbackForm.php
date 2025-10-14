@@ -121,7 +121,7 @@ class FeedbackForm extends Component
                 'issues' => 'array|required_if:satisfied,false',
                 'issues.*' => [
                     'string',
-                    'in:'.implode(',', array_keys($this->availableIssues())),
+                    'in:' . implode(',', array_keys($this->availableIssues())),
                 ],
                 'otherComment' => 'nullable|string|max:1000',
             ], [
@@ -193,7 +193,7 @@ class FeedbackForm extends Component
 
         // If 'other' is selected and there's a comment, append it
         if (in_array(SubmitFeedbackRequest::ISSUE_OTHER, $issues, true) && $this->otherComment !== '') {
-            $issues[] = 'other: '.strip_tags($this->otherComment);
+            $issues[] = 'other: ' . strip_tags($this->otherComment);
         }
 
         return $issues;
