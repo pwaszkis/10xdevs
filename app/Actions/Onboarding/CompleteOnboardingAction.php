@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions\Onboarding;
 
+use App\Mail\WelcomeEmail;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Complete Onboarding Action
@@ -33,6 +35,9 @@ class CompleteOnboardingAction
                 'onboarding_completed_at' => now(),
                 'onboarding_step' => 4,
             ]);
+
+            // Send welcome email
+            Mail::to($user->email)->queue(new WelcomeEmail($user));
 
             return $user->fresh(['preferences']);
         });
