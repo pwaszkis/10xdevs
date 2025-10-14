@@ -169,6 +169,18 @@ class CreatePlanForm extends Component
             return;
         }
 
+        // Rate limiting: max 3 AI generation attempts per minute
+        $rateLimitKey = 'ai-generation-attempt-' . Auth::id();
+        $attempts = cache()->get($rateLimitKey, 0);
+
+        if ($attempts >= 3) {
+            $this->errorMessage = 'Zbyt wiele prób generowania. Spróbuj ponownie za chwilę.';
+
+            return;
+        }
+
+        cache()->put($rateLimitKey, $attempts + 1, 60); // TTL: 60 seconds
+
         try {
             // Start loading state
             $this->isGenerating = true;
