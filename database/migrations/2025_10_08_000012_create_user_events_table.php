@@ -67,6 +67,8 @@ return new class extends Migration
             $table->enum('event_type', [
                 'login',
                 'logout',
+                'onboarding_started',
+                'onboarding_step_completed',
                 'onboarding_completed',
                 'plan_created',
                 'plan_saved_as_draft',

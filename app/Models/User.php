@@ -194,6 +194,35 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if user has completed their profile.
+     * Profile is complete when all required fields are filled.
+     */
+    public function hasCompletedProfile(): bool
+    {
+        if (! $this->hasCompletedOnboarding()) {
+            return false;
+        }
+
+        // Check if all required user fields are filled
+        if (empty($this->nickname) || empty($this->home_location)) {
+            return false;
+        }
+
+        // Check if preferences exist and all required fields are filled
+        if (! $this->preferences) {
+            return false;
+        }
+
+        $preferences = $this->preferences;
+
+        return ! empty($preferences->interests_categories)
+            && ! empty($preferences->travel_pace)
+            && ! empty($preferences->budget_level)
+            && ! empty($preferences->transport_preference)
+            && ! empty($preferences->restrictions);
+    }
+
+    /**
      * Get the user's AI generations.
      *
      * @return HasMany<AIGeneration>

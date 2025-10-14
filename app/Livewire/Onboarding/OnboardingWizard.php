@@ -6,7 +6,9 @@ namespace App\Livewire\Onboarding;
 
 use App\Actions\Onboarding\CompleteOnboardingAction;
 use App\Models\User;
+use App\Models\UserEvent;
 use App\Models\UserPreference;
+use App\Services\AnalyticsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -66,7 +68,7 @@ class OnboardingWizard extends Component
     /**
      * Mount component
      */
-    public function mount(): void
+    public function mount(AnalyticsService $analytics): void
     {
         /** @var User $user */
         $user = Auth::user();
@@ -74,6 +76,14 @@ class OnboardingWizard extends Component
         // Redirect if onboarding already completed
         if ($user->hasCompletedOnboarding()) {
             redirect()->route('dashboard');
+        }
+
+        // Track onboarding started event (only on first load)
+        if ($user->onboarding_step === 1) {
+            $analytics->trackEvent(
+                UserEvent::EVENT_ONBOARDING_STARTED,
+                $user->id
+            );
         }
 
         // Load existing data if user partially completed onboarding
@@ -150,11 +160,20 @@ class OnboardingWizard extends Component
     /**
      * Go to next step
      */
-    public function nextStep(): void
+    public function nextStep(AnalyticsService $analytics): void
     {
         $this->validate($this->rulesForStep($this->currentStep), $this->messages());
 
         $this->saveStepData();
+
+        // Track step completion
+        /** @var User $user */
+        $user = Auth::user();
+        $analytics->trackEvent(
+            UserEvent::EVENT_ONBOARDING_STEP_COMPLETED,
+            $user->id,
+            ['step' => $this->currentStep]
+        );
 
         if ($this->currentStep < 4) {
             $this->currentStep++;
@@ -228,7 +247,7 @@ class OnboardingWizard extends Component
     /**
      * Complete onboarding
      */
-    public function completeOnboarding(): void
+    public function completeOnboarding(AnalyticsService $analytics): void
     {
         $this->isLoading = true;
 
@@ -239,6 +258,12 @@ class OnboardingWizard extends Component
             // Mark onboarding as completed
             $completeAction = new CompleteOnboardingAction;
             $completeAction->execute($user);
+
+            // Track onboarding completion
+            $analytics->trackEvent(
+                UserEvent::EVENT_ONBOARDING_COMPLETED,
+                $user->id
+            );
 
             // Redirect to welcome screen
             session()->flash('success', 'Profil został pomyślnie skonfigurowany!');

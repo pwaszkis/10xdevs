@@ -26,13 +26,11 @@ class UpdateUserPreferencesAction
         if (! $preferences) {
             $preferences = UserPreference::create([
                 'user_id' => $user->id,
-                'language' => $data['language'] ?? 'en',
-                'timezone' => $data['timezone'] ?? config('app.timezone'),
-                'currency' => $data['currency'] ?? 'USD',
-                'notifications_enabled' => $data['notifications_enabled'] ?? true,
-                'email_notifications' => $data['email_notifications'] ?? true,
-                'push_notifications' => $data['push_notifications'] ?? false,
-                'theme' => $data['theme'] ?? 'auto',
+                'interests_categories' => $data['interests_categories'] ?? [],
+                'travel_pace' => $data['travel_pace'] ?? null,
+                'budget_level' => $data['budget_level'] ?? null,
+                'transport_preference' => $data['transport_preference'] ?? null,
+                'restrictions' => $data['restrictions'] ?? null,
             ]);
         } else {
             $preferences->update($data);
