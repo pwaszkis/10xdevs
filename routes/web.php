@@ -77,3 +77,4 @@ Route::middleware(['auth', 'verified', 'onboarding.completed'])->group(function 
 */
 
 require __DIR__ . '/auth.php';
+Route::get('/admin/analytics', \App\Livewire\Admin\Analytics::class)->middleware(['auth', 'verified'])->name('admin.analytics');
