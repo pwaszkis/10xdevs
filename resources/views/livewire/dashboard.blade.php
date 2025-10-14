@@ -1,3 +1,4 @@
+<div>
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -75,7 +76,7 @@
                 <div class="px-4 sm:px-0">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
                         @foreach($this->plans as $plan)
-                            <livewire:components.travel-plan-card :plan="$plan" :key="'plan-'.$plan->id" />
+                            <livewire:components.travel-plan-card :plan="$plan" wire:key="plan-{{ $plan->id }}" />
                         @endforeach
                     </div>
 
@@ -135,3 +136,4 @@
         </div>
     </div>
 </x-app-layout>
+</div>

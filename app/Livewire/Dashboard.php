@@ -29,6 +29,12 @@ class Dashboard extends Component
     /** Search query */
     public ?string $search = null;
 
+    /** Sort by field */
+    public string $sortBy = 'created_at';
+
+    /** Sort direction */
+    public string $sortDirection = 'desc';
+
     // ==================== LIFECYCLE HOOKS ====================
 
     /**
@@ -71,6 +77,20 @@ class Dashboard extends Component
         $this->resetPage();
     }
 
+    /**
+     * Set sort field and direction.
+     */
+    public function setSortBy(string $field): void
+    {
+        if ($this->sortBy === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $field;
+            $this->sortDirection = 'desc';
+        }
+        $this->resetPage();
+    }
+
     // ==================== COMPUTED PROPERTIES ====================
 
     /**
@@ -82,8 +102,7 @@ class Dashboard extends Component
     public function plans(): LengthAwarePaginator
     {
         $query = TravelPlan::query()
-            ->where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc');
+            ->where('user_id', Auth::id());
 
         // Apply status filter
         if ($this->statusFilter !== 'all') {
@@ -97,6 +116,9 @@ class Dashboard extends Component
                     ->orWhere('destination', 'like', '%' . $this->search . '%');
             });
         }
+
+        // Apply sorting
+        $query->orderBy($this->sortBy, $this->sortDirection);
 
         return $query->paginate(20);
     }
