@@ -73,6 +73,27 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'ai-errors' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/ai-errors.log'),
+            'level' => 'error',
+            'days' => 14,
+        ],
+
+        'user-activity' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/user-activity.log'),
+            'level' => 'info',
+            'days' => 14,
+        ],
+
+        'email' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/email.log'),
+            'level' => 'info',
+            'days' => 14,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
