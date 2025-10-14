@@ -95,6 +95,9 @@ class GenerateTravelPlanJob implements ShouldQueue
 
             // Save plan data in transaction
             DB::transaction(function () use ($travelPlan, $aiGeneration, $result) {
+                // Delete existing days/points if regenerating
+                $travelPlan->days()->delete();
+
                 // Save daily itinerary
                 $this->savePlanDays($travelPlan, $result['plan']);
 

@@ -29,3 +29,4 @@ _ide_helper_models.php
 
 # Status reports (generated)
 MVP-STATUS-REPORT.md
+storage/backups/

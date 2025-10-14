@@ -114,9 +114,7 @@ class Show extends Component
      */
     protected function getUserAiGenerationsRemaining(): int
     {
-        $user = auth()->user();
-
-        return max(0, $this->aiGenerationsLimit - $user->ai_generations_count_current_month);
+        return $this->limitService->getRemainingGenerations(Auth::id());
     }
 
     /**
@@ -215,20 +213,13 @@ class Show extends Component
             // Get user preferences
             $userPreferences = $this->preferenceService->getUserPreferences(Auth::id());
 
-            // Dispatch to queue (sync in local env due to PHP version constraints)
-            $job = GenerateTravelPlanJob::dispatch(
+            // Dispatch to queue (use database queue for async processing)
+            GenerateTravelPlanJob::dispatch(
                 travelPlanId: $this->plan->id,
                 userId: Auth::id(),
                 aiGenerationId: $aiGeneration->id,
                 userPreferences: $userPreferences
-            );
-
-            // Use sync queue in local environment
-            if (app()->environment(['local', 'development'])) {
-                $job->onConnection('sync');
-            } else {
-                $job->onQueue('ai-generation');
-            }
+            )->onQueue('ai-generation');
 
             // Store generation ID for polling
             $this->generationId = $aiGeneration->id;
