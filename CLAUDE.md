@@ -67,23 +67,20 @@ make test
 make phpstan
 # or: docker compose exec app ./vendor/bin/phpstan analyse
 
-# Fix code style (Laravel Pint)
+# Fix code style (Laravel Pint) - PRIMARY CODE STYLE TOOL
 make cs-fix
 # or: docker compose exec app ./vendor/bin/pint
 
-# Check code style (Pint)
+# Check code style (Pint) - PRIMARY CODE STYLE TOOL
 make cs-check
 # or: docker compose exec app ./vendor/bin/pint --test
 
-# Check PSR-12 compliance (PHPCS)
-docker compose exec app ./vendor/bin/phpcs
-
-# Auto-fix PSR-12 violations (PHPCBF)
-docker compose exec app ./vendor/bin/phpcbf
-
-# Run all quality checks
+# Run all quality checks (PHPStan + Pint + PHPUnit)
 make quality
 ```
+
+**⚠️ Code Style Note:**
+This project uses **Laravel Pint** as the official code style tool. While PHPCS/PHPCBF are installed, they follow strict PSR-12 which conflicts with Laravel conventions. The CI pipeline and `make quality` command use **Pint only** for style checks.
 
 ### Database Operations
 

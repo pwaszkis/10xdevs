@@ -96,9 +96,6 @@ jobs:
       - name: Run Laravel Pint (check)
         run: ./vendor/bin/pint --test
 
-      - name: Run PHP CodeSniffer
-        run: ./vendor/bin/phpcs
-
   frontend:
     runs-on: ubuntu-latest
 

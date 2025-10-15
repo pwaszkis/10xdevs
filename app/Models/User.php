@@ -231,4 +231,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(AIGeneration::class);
     }
+
+    /**
+     * Get the user's events.
+     *
+     * @return HasMany<UserEvent>
+     */
+    public function userEvents(): HasMany
+    {
+        return $this->hasMany(UserEvent::class);
+    }
 }
