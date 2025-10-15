@@ -123,6 +123,7 @@ class ShowPlanTest extends TestCase
 
         $point1 = PlanPoint::factory()->create([
             'plan_day_id' => $day1->id,
+            'order_number' => 1,
             'name' => 'Eiffel Tower',
             'description' => 'Iconic landmark',
             'day_part' => 'rano',
@@ -130,6 +131,7 @@ class ShowPlanTest extends TestCase
 
         $point2 = PlanPoint::factory()->create([
             'plan_day_id' => $day1->id,
+            'order_number' => 2,
             'name' => 'Louvre Museum',
             'description' => 'Art museum',
             'day_part' => 'popoludnie',
