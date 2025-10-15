@@ -62,12 +62,61 @@ OPENAI_MODEL=gpt-4o-mini
 - Watermarks, headers, footers
 
 ### Email System
-**Laravel Mail + Mailgun**
-- Mailgun: 5,000 emaili gratis/msc
+**Laravel Mail + SendGrid**
+- SendGrid: 100 emaili/dzień gratis (3,000/msc) - DARMOWE
 - EU servers (GDPR)
-- ~$5-10/miesiąc dla MVP
+- Wystarczające dla MVP (0 kosztów)
+- Alternatywy: Resend (3k/msc), SMTP2GO (1k/msc)
+- ⚠️ Mailgun usunął darmowy plan (najtańszy €14/msc)
 
 
-### CI/CD
-- Github Actions do tworzenia pipeline’ów CI/CD
-- DigitalOcean do hostowania aplikacji za pośrednictwem obrazu docker
+### CI/CD & Production Infrastructure
+- **GitHub Actions** do tworzenia pipeline'ów CI/CD
+  - Automatyczny deployment przy push do `main`
+  - Testy, PHPStan, Pint przed deployment
+  - Manual deployment trigger
+- **DigitalOcean** do hostowania aplikacji za pośrednictwem Docker
+  - Droplet: Ubuntu 24.04 LTS (2GB RAM, Frankfurt datacenter)
+  - Automated backups enabled ($2.40/mo)
+- **Cloudflare** (Free tier)
+  - DNS management
+  - CDN i cache
+  - DDoS protection
+  - Free SSL certificates
+- **Domain**: OVH (.com ~$12/rok, .pl ~$8/rok)
+
+### Production Stack Details
+
+**Docker Compose Services:**
+- `app`: PHP 8.3 + Laravel 11 + Supervisor
+- `nginx`: Nginx Alpine z SSL (Let's Encrypt)
+- `mysql`: MySQL 8.0 z persistent storage
+- `redis`: Redis 7 dla cache i queue
+- `worker`: Laravel Queue worker (dedicated container)
+- `scheduler`: Laravel Scheduler (cron)
+- `certbot`: SSL certificate auto-renewal
+
+**Security:**
+- Wszystkie klucze API w GitHub Secrets (nie w repo)
+- `.env` tylko na serwerze produkcyjnym
+- Firewall (ufw): tylko porty 22, 80, 443
+- Fail2ban dla ochrony przed brute force
+- SSL/TLS z HSTS enabled
+- Security headers (X-Frame-Options, CSP, etc.)
+
+**Koszty miesięczne (MVP):**
+| Usługa | Koszt |
+|--------|-------|
+| OVH Domain | ~$1 |
+| DigitalOcean Droplet (2GB) | $12 |
+| DigitalOcean Backups | $2.40 |
+| Cloudflare DNS | $0 (free) |
+| SendGrid | $0 (3k emails/msc free) |
+| OpenAI API | $3-30 (usage-based) |
+| **TOTAL** | **$18-47/msc** |
+
+**Skalowanie (przyszłość):**
+- Droplet 4GB RAM: $24/msc (500-2000 użytkowników)
+- Managed MySQL: $15/msc (przy bottleneck DB)
+- Managed Redis: $15/msc (high-traffic queue)
+- Load Balancer: $12/msc (multi-instance)

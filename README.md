@@ -487,6 +487,79 @@ GOOGLE_REDIRECT_URI=http://localhost/auth/google/callback
 
 For production configuration, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
+### Production Deployment
+
+**Prerequisites:**
+- Domain registered on OVH
+- DigitalOcean account with droplet
+- Cloudflare account for DNS
+- SendGrid account for emails (100 emails/day free)
+- Google Cloud Console OAuth credentials
+- OpenAI API key
+
+**Quick deployment steps:**
+
+1. **Infrastructure Setup** (one-time):
+   ```bash
+   # Purchase domain on OVH
+   # Create DigitalOcean droplet (Ubuntu 24.04, 2GB RAM)
+   # Configure Cloudflare DNS pointing to droplet IP
+   # Setup Mailgun domain and DNS records
+   ```
+
+2. **Server Setup** (one-time):
+   ```bash
+   # SSH to droplet
+   ssh deploy@YOUR_DROPLET_IP
+
+   # Install Docker and Docker Compose
+   # See DEPLOYMENT.md for detailed steps
+   ```
+
+3. **Application Deployment**:
+   ```bash
+   # Clone repository
+   git clone https://github.com/YOUR_USERNAME/vibetravels.git /var/www/vibetravels
+   cd /var/www/vibetravels
+
+   # Create .env from template (add production secrets)
+   cp .env.example .env
+   nano .env
+
+   # Build and start services
+   docker compose -f docker-compose.production.yml build
+   docker compose -f docker-compose.production.yml up -d
+
+   # Install dependencies
+   docker compose -f docker-compose.production.yml exec app composer install --no-dev --optimize-autoloader
+   docker compose -f docker-compose.production.yml run --rm node npm ci
+   docker compose -f docker-compose.production.yml run --rm node npm run build
+
+   # Run migrations
+   docker compose -f docker-compose.production.yml exec app php artisan migrate --force
+
+   # Cache config
+   docker compose -f docker-compose.production.yml exec app php artisan config:cache
+   ```
+
+4. **GitHub Actions CI/CD**:
+   - Add deployment secrets to GitHub repository
+   - Push to `main` branch triggers automatic deployment
+   - Manual deployment via GitHub Actions UI
+
+**Production URLs:**
+- Application: https://vibetravels.com
+- Health check: https://vibetravels.com/health
+
+**Estimated costs: $18-47/month**
+- Domain: ~$1/mo
+- DigitalOcean Droplet (2GB): $12/mo
+- DigitalOcean Backups: $2.40/mo
+- OpenAI API: $3-30/mo (usage-based)
+- Cloudflare, SendGrid, GitHub: $0 (free tiers)
+
+For complete deployment guide, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
+
 ## Testing
 
 ### Running Tests

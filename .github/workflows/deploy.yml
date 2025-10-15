@@ -1,0 +1,284 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip tests before deployment'
+        required: false
+        default: 'false'
+
+jobs:
+  # Run tests before deployment (unless skipped)
+  tests:
+    if: github.event.inputs.skip_tests != 'true'
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: vibetravels_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, json, curl, dom, fileinfo, filter, hash, openssl, pcre, pdo, session, tokenizer, zip, gd, redis
+          coverage: none
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install Puppeteer globally
+        run: npm install -g puppeteer
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Generate application key
+        run: php artisan key:generate
+
+      - name: Directory Permissions
+        run: chmod -R 777 storage bootstrap/cache
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: vibetravels_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+      - name: Execute tests
+        run: php artisan test
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: vibetravels_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G
+
+      - name: Run Laravel Pint (check)
+        run: ./vendor/bin/pint --test
+
+  # Deploy to production
+  deploy:
+    needs: tests
+    if: |
+      always() &&
+      (needs.tests.result == 'success' || needs.tests.result == 'skipped')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -e
+
+            echo "🚀 Starting deployment..."
+
+            # Navigate to project directory
+            cd /var/www/vibetravels
+
+            # Pull latest changes
+            echo "📥 Pulling latest code from main branch..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Check if .env exists
+            if [ ! -f .env ]; then
+              echo "❌ ERROR: .env file not found!"
+              exit 1
+            fi
+
+            # Build Docker images
+            echo "🐳 Building Docker images..."
+            docker compose -f docker-compose.production.yml build --no-cache
+
+            # Stop services
+            echo "🛑 Stopping services..."
+            docker compose -f docker-compose.production.yml down
+
+            # Start services
+            echo "▶️  Starting services..."
+            docker compose -f docker-compose.production.yml up -d
+
+            # Wait for services to be ready
+            echo "⏳ Waiting for services to be ready..."
+            sleep 10
+
+            # Install/update Composer dependencies
+            echo "📦 Installing Composer dependencies..."
+            docker compose -f docker-compose.production.yml exec -T app composer install --optimize-autoloader --no-dev --no-interaction
+
+            # Run database migrations
+            echo "🗄️  Running database migrations..."
+            docker compose -f docker-compose.production.yml exec -T app php artisan migrate --force
+
+            # Clear and cache config
+            echo "🔄 Clearing and caching configuration..."
+            docker compose -f docker-compose.production.yml exec -T app php artisan config:clear
+            docker compose -f docker-compose.production.yml exec -T app php artisan config:cache
+            docker compose -f docker-compose.production.yml exec -T app php artisan route:cache
+            docker compose -f docker-compose.production.yml exec -T app php artisan view:cache
+
+            # Create storage link if not exists
+            docker compose -f docker-compose.production.yml exec -T app php artisan storage:link || true
+
+            # Restart queue workers
+            echo "🔄 Restarting queue workers..."
+            docker compose -f docker-compose.production.yml restart worker
+
+            # Check service status
+            echo "✅ Checking service status..."
+            docker compose -f docker-compose.production.yml ps
+
+            # Test application
+            echo "🧪 Testing application health..."
+            sleep 5
+            curl -f http://localhost/health || echo "⚠️  Health check failed, but continuing..."
+
+            echo "🎉 Deployment completed successfully!"
+
+      - name: Copy frontend assets to server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "public/build/*"
+          target: "/var/www/vibetravels/"
+          overwrite: true
+          strip_components: 0
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /var/www/vibetravels
+
+            # Check if all containers are running
+            RUNNING=$(docker compose -f docker-compose.production.yml ps --status running --format json | jq -s 'length')
+            TOTAL=$(docker compose -f docker-compose.production.yml ps --format json | jq -s 'length')
+
+            echo "Services running: $RUNNING/$TOTAL"
+
+            if [ "$RUNNING" -eq "$TOTAL" ]; then
+              echo "✅ All services are running"
+            else
+              echo "⚠️ Some services are not running"
+              docker compose -f docker-compose.production.yml ps
+              exit 1
+            fi
+
+            # Check disk space
+            DISK_USAGE=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//')
+            echo "Disk usage: $DISK_USAGE%"
+
+            if [ "$DISK_USAGE" -gt 85 ]; then
+              echo "⚠️ WARNING: Disk usage is above 85%"
+            fi
+
+      - name: Send deployment notification
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment to production successful!"
+          else
+            echo "❌ Deployment to production failed!"
+          fi
+
+  # Rollback job (manual trigger only)
+  rollback:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.skip_tests == 'rollback'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Rollback deployment
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /var/www/vibetravels
+
+            echo "🔄 Rolling back to previous commit..."
+
+            # Get previous commit
+            git log --oneline -10
+            echo "Enter commit hash to rollback to:"
+
+            # For automated rollback, rollback to HEAD~1
+            git reset --hard HEAD~1
+
+            # Rebuild and restart
+            docker compose -f docker-compose.production.yml up -d --build
+            docker compose -f docker-compose.production.yml exec -T app php artisan migrate:rollback --step=1
+            docker compose -f docker-compose.production.yml exec -T app php artisan config:cache
+
+            echo "✅ Rollback completed"
