@@ -54,6 +54,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Install Puppeteer globally
+        run: npm install -g puppeteer
+
       - name: Build assets
         run: npm run build
 
