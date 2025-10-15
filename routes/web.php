@@ -13,6 +13,51 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
+// Health check endpoint for monitoring and deployment verification
+Route::get('/health', function () {
+    try {
+        // Check database connection
+        $dbStatus = DB::connection()->getPdo() ? 'connected' : 'disconnected';
+    } catch (\Exception $e) {
+        $dbStatus = 'error: ' . $e->getMessage();
+    }
+
+    try {
+        // Check Redis connection
+        $redisStatus = \Illuminate\Support\Facades\Redis::connection()->ping() ? 'connected' : 'disconnected';
+    } catch (\Exception $e) {
+        $redisStatus = 'error: ' . $e->getMessage();
+    }
+
+    try {
+        // Check queue
+        $queueSize = \Illuminate\Support\Facades\Queue::size();
+        $queueStatus = $queueSize < 100 ? 'healthy' : 'overloaded';
+    } catch (\Exception $e) {
+        $queueStatus = 'error: ' . $e->getMessage();
+        $queueSize = 0;
+    }
+
+    $allHealthy = $dbStatus === 'connected' && $redisStatus === 'connected';
+
+    return response()->json([
+        'status' => $allHealthy ? 'ok' : 'degraded',
+        'timestamp' => now()->toIso8601String(),
+        'services' => [
+            'database' => $dbStatus,
+            'redis' => $redisStatus,
+            'queue' => [
+                'status' => $queueStatus,
+                'size' => $queueSize,
+            ],
+        ],
+        'app' => [
+            'env' => app()->environment(),
+            'debug' => config('app.debug'),
+        ],
+    ], $allHealthy ? 200 : 503);
+})->name('health');
+
 /*
 |--------------------------------------------------------------------------
 | Guest Routes (Unauthenticated Users Only)
