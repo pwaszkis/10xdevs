@@ -8,7 +8,7 @@
 set -e
 
 # Configuration
-DOMAIN="vibetravels.com"
+DOMAIN="przem-podroze.pl"
 CERT_PATH="certbot/conf/live/$DOMAIN"
 
 # Colors

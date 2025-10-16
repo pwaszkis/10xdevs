@@ -11,8 +11,8 @@
 set -e
 
 # Configuration
-DOMAINS=(vibetravels.com www.vibetravels.com)
-EMAIL="your-email@example.com"  # TODO: Replace with actual email
+DOMAINS=(przem-podroze.pl www.przem-podroze.pl)
+EMAIL="przemek@przem-podroze.pl"  # TODO: Replace with actual email
 STAGING=0  # Set to 1 for testing (staging certificates), 0 for production
 
 # Colors for output
@@ -31,6 +31,24 @@ if [ ! -f "docker-compose.production.yml" ]; then
     echo -e "${RED}Error: docker-compose.production.yml not found!${NC}"
     echo "This script must be run from the project root on the production server."
     exit 1
+fi
+
+# Check if certbot directories exist and are owned by root
+if [ -d "certbot" ]; then
+    CERTBOT_OWNER=$(stat -c '%U' certbot 2>/dev/null || stat -f '%Su' certbot 2>/dev/null || echo "unknown")
+    if [ "$CERTBOT_OWNER" = "root" ]; then
+        echo -e "${YELLOW}⚠ certbot directory is owned by root${NC}"
+        echo "This can cause permission issues. Run these commands:"
+        echo "  sudo chown -R \$USER:\$USER certbot"
+        echo "  chmod -R 755 certbot"
+        echo ""
+        read -p "Do you want to continue anyway? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Aborted. Please fix permissions first."
+            exit 1
+        fi
+    fi
 fi
 
 # Validate email
@@ -55,16 +73,19 @@ if [ -d "certbot/conf/live/${DOMAINS[0]}" ]; then
     rm -f certbot/conf/renewal/${DOMAINS[0]}.conf
 fi
 
-# Create directories
+# Create directories with proper permissions
 echo -e "${GREEN}✓${NC} Creating directories..."
 mkdir -p certbot/conf
 mkdir -p certbot/www
+chmod -R 755 certbot
 
 # Download recommended TLS parameters if they don't exist
 if [ ! -f "certbot/conf/options-ssl-nginx.conf" ] || [ ! -f "certbot/conf/ssl-dhparams.pem" ]; then
     echo -e "${GREEN}✓${NC} Downloading recommended TLS parameters..."
-    curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf > certbot/conf/options-ssl-nginx.conf
-    curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem > certbot/conf/ssl-dhparams.pem
+    curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf -o certbot/conf/options-ssl-nginx.conf
+    curl -s https://raw.githubusercontent.com/certbot/certbot/master/certbot/certbot/ssl-dhparams.pem -o certbot/conf/ssl-dhparams.pem
+    chmod 644 certbot/conf/options-ssl-nginx.conf
+    chmod 644 certbot/conf/ssl-dhparams.pem
 fi
 
 # Create dummy certificate for initial Nginx start
