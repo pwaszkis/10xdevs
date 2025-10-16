@@ -123,6 +123,33 @@ docker compose -f docker-compose.production.yml restart certbot
 
 ## 🐛 Troubleshooting
 
+### Problem: "Permission denied" when creating certificates
+
+**Error message:**
+```
+✓ Downloading recommended TLS parameters...
+./init-letsencrypt.sh: line 66: certbot/conf/options-ssl-nginx.conf: Permission denied
+```
+
+**Solution:**
+```bash
+# Fix permissions
+./fix-ssl-permissions.sh
+
+# Or manually:
+sudo chown -R $USER:$USER certbot
+chmod -R 755 certbot
+
+# Then run setup again
+./init-letsencrypt.sh
+```
+
+**Why this happens:**
+- Docker containers may have created certbot directories as root
+- Previous failed attempts may have left incorrect ownership
+
+---
+
 ### Problem: "DNS not pointing to server"
 
 **Solution:**
