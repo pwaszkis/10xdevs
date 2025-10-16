@@ -1,12 +1,8 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-      args:
-        - USER_ID=${USER_ID:-1000}
-        - GROUP_ID=${GROUP_ID:-1000}
-    image: vibetravels-app:latest
+    # Use pre-built image from GitHub Container Registry
+    # Built in CI/CD pipeline for faster deployments (2-3 min vs 20-30 min)
+    image: ghcr.io/pwaszkis/10xdevs/app:latest
     container_name: vibetravels-app
     restart: unless-stopped
     working_dir: /var/www
@@ -91,13 +87,8 @@ services:
       start_period: 40s
 
   worker:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-      args:
-        - USER_ID=${USER_ID:-1000}
-        - GROUP_ID=${GROUP_ID:-1000}
-    image: vibetravels-app:latest
+    # Use pre-built image from GitHub Container Registry
+    image: ghcr.io/pwaszkis/10xdevs/app:latest
     container_name: vibetravels-worker
     restart: unless-stopped
     working_dir: /var/www
@@ -114,13 +105,8 @@ services:
     command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --memory=128
 
   scheduler:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-      args:
-        - USER_ID=${USER_ID:-1000}
-        - GROUP_ID=${GROUP_ID:-1000}
-    image: vibetravels-app:latest
+    # Use pre-built image from GitHub Container Registry
+    image: ghcr.io/pwaszkis/10xdevs/app:latest
     container_name: vibetravels-scheduler
     restart: unless-stopped
     working_dir: /var/www
