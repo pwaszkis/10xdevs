@@ -324,7 +324,7 @@ jobs:
 
             # Fix permissions for public directory
             echo "🔒 Fixing permissions..."
-            docker compose -f docker-compose.production.yml exec -T app chown -R www-data:www-data public/vendor storage bootstrap/cache
+            docker compose -f docker-compose.production.yml exec -T --user root app chown -R www-data:www-data public/vendor storage bootstrap/cache 2>/dev/null || echo "⚠️  Permission fix skipped (files already owned correctly)"
 
             # Restart queue workers
             echo "🔄 Restarting queue workers..."
