@@ -1,8 +1,10 @@
-name: Deploy to Production
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
   workflow_dispatch:
     inputs:
       skip_tests:
@@ -11,9 +13,8 @@ on:
         default: 'false'
 
 jobs:
-  # Run tests before deployment (unless skipped)
+  # Run tests with coverage for PR/develop, without coverage for main (faster)
   tests:
-    if: github.event.inputs.skip_tests != 'true'
     runs-on: ubuntu-latest
 
     services:
@@ -41,7 +42,7 @@ jobs:
         with:
           php-version: '8.3'
           extensions: mbstring, xml, ctype, json, curl, dom, fileinfo, filter, hash, openssl, pcre, pdo, session, tokenizer, zip, gd, redis
-          coverage: none
+          coverage: ${{ github.ref != 'refs/heads/main' && 'xdebug' || 'none' }}
 
       - name: Copy .env
         run: cp .env.example .env
@@ -81,8 +82,14 @@ jobs:
           DB_PASSWORD: root
 
       - name: Execute tests
-        run: php artisan test
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            php artisan test --coverage
+          else
+            php artisan test
+          fi
         env:
+          XDEBUG_MODE: ${{ github.ref != 'refs/heads/main' && 'coverage' || '' }}
           DB_CONNECTION: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
@@ -92,18 +99,59 @@ jobs:
           REDIS_HOST: 127.0.0.1
           REDIS_PORT: 6379
 
+  # Code quality checks (PHPStan + Laravel Pint)
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, json, curl, dom, fileinfo
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
       - name: Run PHPStan
         run: ./vendor/bin/phpstan analyse --memory-limit=2G
 
       - name: Run Laravel Pint (check)
         run: ./vendor/bin/pint --test
 
-  # Deploy to production
+  # Frontend checks (ESLint + formatting + build)
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check code formatting
+        run: npm run format:check
+
+      - name: Build assets
+        run: npm run build
+
+  # Deploy to production (only on push to main)
   deploy:
-    needs: tests
-    if: |
-      always() &&
-      (needs.tests.result == 'success' || needs.tests.result == 'skipped')
+    needs: [tests, code-quality, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
