@@ -353,32 +353,276 @@ cd /var/www/vibetravels
 
 ---
 
-### SSL Certificate
+### SSL Certificate Setup
 
-We'll use Let's Encrypt with automatic renewal via Docker.
+We use **Let's Encrypt** for free SSL certificates with automatic renewal via Docker Certbot container.
 
-**Option 1: Using Certbot Container (Recommended)**
+#### Prerequisites
 
-The production `docker-compose.yml` includes a certbot service that automatically obtains and renews certificates.
+Before setting up SSL:
+- ✅ DNS must be pointing to your server (wait 1-2 hours after DNS change)
+- ✅ Ports 80 and 443 must be open in firewall
+- ✅ Nginx container must be running
+- ✅ Domain must be accessible via HTTP first
 
-**Option 2: Manual Certbot Installation**
+#### Check if Certificates Already Exist
+
+**On the production server**, run the certificate status checker:
 
 ```bash
-# Install Certbot
-sudo apt install certbot python3-certbot-nginx -y
-
-# Obtain certificate (after DNS is configured)
-sudo certbot certonly --standalone -d vibetravels.com -d www.vibetravels.com --email your@email.com --agree-tos --non-interactive
-
-# Certificates stored in:
-# /etc/letsencrypt/live/vibetravels.com/fullchain.pem
-# /etc/letsencrypt/live/vibetravels.com/privkey.pem
-
-# Auto-renewal is configured via systemd timer
-sudo systemctl status certbot.timer
+cd /var/www/vibetravels
+./check-ssl-status.sh
 ```
 
-**Note**: We'll configure Nginx to use these certificates in the production Docker Compose setup.
+This script will:
+- ✅ Check if certificates exist
+- ✅ Show certificate expiration date
+- ✅ Verify Certbot auto-renewal is running
+- ✅ Test HTTPS configuration
+- ⚠️ Warn if certificates are expiring soon
+
+**If certificates exist and are valid**, you're done! Skip to the next section.
+
+**If certificates don't exist**, continue with the setup below.
+
+---
+
+#### Initial SSL Certificate Setup
+
+**Step 1: Verify DNS is Working**
+
+```bash
+# From your local machine or server
+dig vibetravels.com +short
+# Should return your server IP
+
+# Test HTTP access (before HTTPS)
+curl -I http://vibetravels.com
+# Should return 200 or 301 (redirect)
+```
+
+**Step 2: Update Email in Script**
+
+Edit the initialization script to add your email:
+
+```bash
+cd /var/www/vibetravels
+nano init-letsencrypt.sh
+
+# Change this line:
+EMAIL="your-email@example.com"
+# To your actual email:
+EMAIL="hello@vibetravels.com"
+
+# Save and exit (Ctrl+X, Y, Enter)
+```
+
+**Step 3: Run Certificate Initialization**
+
+```bash
+# Make script executable (if not already)
+chmod +x init-letsencrypt.sh
+
+# Run the script
+./init-letsencrypt.sh
+```
+
+**What the script does:**
+
+1. Creates necessary directories (`certbot/conf`, `certbot/www`)
+2. Downloads recommended TLS parameters
+3. Creates temporary dummy certificate
+4. Starts Nginx with dummy cert
+5. Requests real certificate from Let's Encrypt
+6. Replaces dummy cert with real cert
+7. Reloads Nginx with real certificate
+8. Starts Certbot auto-renewal service
+
+**Step 4: Verify Certificate**
+
+```bash
+# Check certificate was created
+./check-ssl-status.sh
+
+# Test HTTPS in browser
+# Visit: https://vibetravels.com
+# Should show green padlock 🔒
+
+# Test SSL rating (optional)
+# Visit: https://www.ssllabs.com/ssltest/analyze.html?d=vibetravels.com
+# Should get A or A+ rating
+```
+
+---
+
+#### Testing with Staging Certificates (Optional)
+
+If you want to test the SSL setup without hitting Let's Encrypt rate limits:
+
+```bash
+# Edit init-letsencrypt.sh
+nano init-letsencrypt.sh
+
+# Change:
+STAGING=0
+# To:
+STAGING=1
+
+# Run the script
+./init-letsencrypt.sh
+
+# This creates test certificates (not trusted by browsers)
+# Good for testing the automation, then run again with STAGING=0
+```
+
+**Let's Encrypt Rate Limits:**
+- 50 certificates per domain per week
+- 5 duplicate certificates per week
+- Staging server has no rate limits (use for testing)
+
+---
+
+#### Automatic Certificate Renewal
+
+Certificates are automatically renewed by the `certbot` container.
+
+**How it works:**
+- Certbot container runs in background (`docker-compose.production.yml`)
+- Checks for renewal every 12 hours
+- Renews certificates 30 days before expiration
+- Nginx automatically reloads every 6 hours to pick up new certs
+
+**Verify auto-renewal is running:**
+
+```bash
+# Check certbot container status
+docker compose -f docker-compose.production.yml ps | grep certbot
+
+# Should show:
+# vibetravels-certbot   running
+
+# View certbot logs
+docker compose -f docker-compose.production.yml logs certbot
+
+# Test renewal (dry run)
+docker compose -f docker-compose.production.yml run --rm certbot renew --dry-run
+```
+
+**If certbot container is not running:**
+
+```bash
+# Start certbot with production profile
+docker compose -f docker-compose.production.yml --profile production up -d certbot
+
+# Verify it started
+docker compose -f docker-compose.production.yml ps certbot
+```
+
+---
+
+#### Manual Certificate Renewal
+
+If automatic renewal fails or you need to renew manually:
+
+```bash
+# Renew certificate
+docker compose -f docker-compose.production.yml run --rm certbot renew
+
+# Reload Nginx
+docker compose -f docker-compose.production.yml exec nginx nginx -s reload
+
+# Check status
+./check-ssl-status.sh
+```
+
+---
+
+#### Troubleshooting SSL Issues
+
+**Problem: DNS not propagating**
+
+```bash
+# Check DNS from different locations
+dig vibetravels.com @8.8.8.8 +short
+dig vibetravels.com @1.1.1.1 +short
+
+# If different IPs, wait 1-2 hours
+```
+
+**Problem: Port 80 not accessible**
+
+```bash
+# Check firewall
+sudo ufw status
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# Check if port is listening
+sudo netstat -tulpn | grep :80
+```
+
+**Problem: Certificate request failed**
+
+```bash
+# View detailed logs
+docker compose -f docker-compose.production.yml logs certbot
+
+# Common issues:
+# - DNS not pointing to server
+# - Port 80 blocked
+# - Rate limit hit (use STAGING=1)
+# - Domain not accessible via HTTP
+
+# Test ACME challenge endpoint
+curl http://vibetravels.com/.well-known/acme-challenge/test
+# Should return 404 (not error)
+```
+
+**Problem: Certificate expired**
+
+```bash
+# Force renewal
+docker compose -f docker-compose.production.yml run --rm certbot renew --force-renewal
+
+# Restart Nginx
+docker compose -f docker-compose.production.yml restart nginx
+```
+
+---
+
+#### Certificate Files Location
+
+Certificates are stored in `certbot/conf/live/vibetravels.com/`:
+
+```
+certbot/conf/live/vibetravels.com/
+├── fullchain.pem    # Full certificate chain (used by Nginx)
+├── privkey.pem      # Private key (used by Nginx)
+├── cert.pem         # Certificate only
+└── chain.pem        # Chain only (for OCSP stapling)
+```
+
+These are mounted in the Nginx container at `/etc/letsencrypt/`.
+
+---
+
+#### Security Best Practices
+
+The Nginx configuration includes:
+
+- ✅ **TLS 1.2 and 1.3 only** (no SSL, no TLS 1.0/1.1)
+- ✅ **Strong cipher suites** (forward secrecy)
+- ✅ **HSTS enabled** (HTTP Strict Transport Security)
+- ✅ **OCSP stapling** (faster certificate validation)
+- ✅ **Security headers** (XSS, clickjacking protection)
+
+Test your SSL configuration:
+- https://www.ssllabs.com/ssltest/ (should get A or A+)
+- https://securityheaders.com/ (should get A)
+
+---
+
+**Note**: After SSL setup, update Cloudflare SSL mode to **Full (strict)** in the dashboard.
 
 ---
 
