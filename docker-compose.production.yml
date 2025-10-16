@@ -102,7 +102,7 @@ services:
       - redis
     environment:
       - XDEBUG_MODE=off
-    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --memory=128
+    command: php artisan queue:work redis --queue=default,ai-generation --sleep=3 --tries=3 --max-time=3600 --memory=128
 
   scheduler:
     # Use pre-built image from GitHub Container Registry

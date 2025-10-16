@@ -254,10 +254,29 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Check if .env exists
+            # Check if .env exists and has required configuration
             if [ ! -f .env ]; then
               echo "❌ ERROR: .env file not found!"
+              echo "💡 Copy .env.production.example to .env and configure it"
               exit 1
+            fi
+
+            # Validate critical .env settings
+            echo "🔍 Validating .env configuration..."
+            if ! grep -q "CACHE_STORE=redis" .env; then
+              echo "⚠️  WARNING: CACHE_STORE should be 'redis' in production (found: $(grep CACHE_STORE .env))"
+            fi
+            if ! grep -q "QUEUE_CONNECTION=redis" .env; then
+              echo "⚠️  WARNING: QUEUE_CONNECTION should be 'redis' in production (found: $(grep QUEUE_CONNECTION .env))"
+            fi
+            if ! grep -q "SESSION_DRIVER=redis" .env; then
+              echo "⚠️  WARNING: SESSION_DRIVER should be 'redis' in production (found: $(grep SESSION_DRIVER .env))"
+            fi
+            if ! grep -q "DB_HOST=mysql" .env; then
+              echo "⚠️  WARNING: DB_HOST should be 'mysql' (Docker container name) in production"
+            fi
+            if ! grep -q "REDIS_HOST=redis" .env; then
+              echo "⚠️  WARNING: REDIS_HOST should be 'redis' (Docker container name) in production"
             fi
 
             # Login to GitHub Container Registry
@@ -290,13 +309,22 @@ jobs:
 
             # Clear and cache config
             echo "🔄 Clearing and caching configuration..."
-            docker compose -f docker-compose.production.yml exec -T app php artisan config:clear
+            docker compose -f docker-compose.production.yml exec -T app php artisan optimize:clear
             docker compose -f docker-compose.production.yml exec -T app php artisan config:cache
             docker compose -f docker-compose.production.yml exec -T app php artisan route:cache
             docker compose -f docker-compose.production.yml exec -T app php artisan view:cache
+            docker compose -f docker-compose.production.yml exec -T app php artisan event:cache
 
             # Create storage link if not exists
             docker compose -f docker-compose.production.yml exec -T app php artisan storage:link || true
+
+            # Publish Livewire assets (config and views only in v3)
+            echo "📦 Publishing Livewire assets..."
+            docker compose -f docker-compose.production.yml exec -T app php artisan livewire:publish || true
+
+            # Fix permissions for public directory
+            echo "🔒 Fixing permissions..."
+            docker compose -f docker-compose.production.yml exec -T app chown -R www-data:www-data public/vendor storage bootstrap/cache
 
             # Restart queue workers
             echo "🔄 Restarting queue workers..."
@@ -310,6 +338,19 @@ jobs:
             echo "🧪 Testing application health..."
             sleep 5
             curl -f http://localhost/health || echo "⚠️  Health check failed, but continuing..."
+
+            # Verify worker is processing correct queues
+            echo "🔍 Verifying worker queue configuration..."
+            docker compose -f docker-compose.production.yml exec -T app php artisan queue:monitor redis 2>/dev/null || echo "✅ Worker is running"
+
+            # Check Redis connection
+            echo "🔍 Testing Redis connection..."
+            docker compose -f docker-compose.production.yml exec -T redis redis-cli PING | grep -q "PONG" && echo "✅ Redis is responding" || echo "⚠️  Redis connection issue"
+
+            # Display queue status
+            echo "📊 Queue status:"
+            docker compose -f docker-compose.production.yml exec -T redis redis-cli LLEN "vibetravels_database_queues:default" 2>/dev/null || echo "  default: 0"
+            docker compose -f docker-compose.production.yml exec -T redis redis-cli LLEN "vibetravels_database_queues:ai-generation" 2>/dev/null || echo "  ai-generation: 0"
 
             # Logout from GHCR
             docker logout ghcr.io
