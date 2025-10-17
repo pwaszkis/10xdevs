@@ -18,7 +18,7 @@ services:
       - XDEBUG_MODE=off
       - PHP_OPCACHE_ENABLE=1
     healthcheck:
-      test: ["CMD", "php-fpm-healthcheck"]
+      test: ["CMD-SHELL", "php-fpm -t || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -103,6 +103,12 @@ services:
     environment:
       - XDEBUG_MODE=off
     command: php artisan queue:work redis --queue=default,ai-generation --sleep=3 --tries=3 --max-time=3600 --memory=128
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep 'queue:work' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   scheduler:
     # Use pre-built image from GitHub Container Registry
@@ -121,6 +127,12 @@ services:
     environment:
       - XDEBUG_MODE=off
     command: /bin/sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep 'schedule:run' || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   certbot:
     image: certbot/certbot

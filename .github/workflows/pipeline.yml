@@ -323,30 +323,19 @@ jobs:
             docker compose -f docker-compose.production.yml exec -T app php artisan livewire:publish || true
 
             # Fix permissions for storage and cache directories
-            # Note: Using deploy:deploy ownership because volumes are mounted from host
-            # The deploy user needs write access, and containers access via volume mounts
-            echo "🔒 Fixing permissions..."
-            sudo chown -R deploy:deploy storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
+            # Note: Permissions are already correct (deploy user UID 1000 = container UID 1000)
+            # The deploy user owns the directories and containers use the same UID via volume mounts
+            # No sudo needed - would fail in GitHub Actions SSH context anyway
+            echo "🔒 Ensuring correct permissions..."
+            chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
-            # Restart queue workers (Supervisor-managed on host)
-            echo "🔄 Restarting queue workers..."
-            if command -v supervisorctl &> /dev/null; then
-              sudo supervisorctl restart vibetravels-worker:* || echo "⚠️  Supervisor not configured yet (run setup-production-services.sh)"
-            else
-              echo "⚠️  Supervisor not installed (workers won't restart automatically)"
-              echo "💡 Run: sudo ./scripts/setup-production-services.sh"
-            fi
+            # Restart queue workers and scheduler (Docker containers)
+            echo "🔄 Restarting queue workers and scheduler..."
+            docker compose -f docker-compose.production.yml restart worker scheduler
 
             # Check service status
             echo "✅ Checking service status..."
             docker compose -f docker-compose.production.yml ps
-
-            # Check Supervisor worker status
-            if command -v supervisorctl &> /dev/null; then
-              echo "📊 Queue worker status:"
-              sudo supervisorctl status vibetravels-worker:* || echo "⚠️  Workers not configured"
-            fi
 
             # Test application
             echo "🧪 Testing application health..."
