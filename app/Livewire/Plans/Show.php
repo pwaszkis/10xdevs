@@ -150,8 +150,8 @@ class Show extends Component
 
             $this->isGenerating = true;
             $this->generationId = $pendingGeneration->id;
-            // Start with 10% to show that something is happening
-            $this->generationProgress = 10;
+            // Start with 15% to show that something is happening
+            $this->generationProgress = 15;
         }
     }
 
@@ -241,7 +241,7 @@ class Show extends Component
         try {
             // Start loading state with initial progress
             $this->isGenerating = true;
-            $this->generationProgress = 10; // Start with 10% to show immediate feedback
+            $this->generationProgress = 15; // Start with 15% to show immediate feedback
 
             // Increment generation count with race condition protection
             $aiGeneration = $this->limitService->incrementGenerationCount(
@@ -354,14 +354,29 @@ class Show extends Component
         } else {
             // Still pending or processing - estimate progress based on time elapsed
             $elapsed = now()->diffInSeconds($aiGeneration->created_at);
-            $estimatedDuration = 45; // seconds (increased to be more realistic)
+            $estimatedDuration = 60; // seconds (realistic estimation for AI generation)
 
-            // Calculate progress: start at 10%, cap at 90% until completion
-            $baseProgress = 10; // Start at 10% (set in confirmRegenerate)
-            $calculatedProgress = $baseProgress + (($elapsed / $estimatedDuration) * 80);
+            // Calculate progress with smooth curve
+            // Start at 15%, grow fast initially, then slow down, cap at 95%
+            if ($elapsed < 5) {
+                // First 5 seconds: 15% -> 30%
+                $calculatedProgress = 15 + ($elapsed / 5) * 15;
+            } elseif ($elapsed < 15) {
+                // 5-15 seconds: 30% -> 50%
+                $calculatedProgress = 30 + (($elapsed - 5) / 10) * 20;
+            } elseif ($elapsed < 30) {
+                // 15-30 seconds: 50% -> 70%
+                $calculatedProgress = 50 + (($elapsed - 15) / 15) * 20;
+            } elseif ($elapsed < 50) {
+                // 30-50 seconds: 70% -> 85%
+                $calculatedProgress = 70 + (($elapsed - 30) / 20) * 15;
+            } else {
+                // 50+ seconds: 85% -> 95% (slow down near completion)
+                $calculatedProgress = 85 + min(10, (($elapsed - 50) / 20) * 10);
+            }
 
-            // Ensure progress is between current value and 90% (never decrease, never exceed 90%)
-            $this->generationProgress = (int) min(90, max($this->generationProgress, $calculatedProgress));
+            // Ensure progress never decreases and caps at 95%
+            $this->generationProgress = (int) min(95, max($this->generationProgress, $calculatedProgress));
         }
     }
 

@@ -7,7 +7,7 @@
                     {{ config('app.name', 'VibeTravels') }}
                 </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Plan your perfect trip with AI-powered personalized itineraries.
+                    Zaplanuj swoją wymarzoną podróż z pomocą AI i spersonalizowanych planów.
                 </p>
                 <div class="flex space-x-4">
                     <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
@@ -22,34 +22,34 @@
             <!-- Quick Links -->
             <div>
                 <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-4">
-                    Quick Links
+                    Szybkie linki
                 </h4>
                 <ul class="space-y-2">
                     @auth
                         <li>
                             <a href="{{ route('dashboard') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                                Dashboard
+                                Panel
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('plans.create') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                                Create Plan
+                                Utwórz plan
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('profile') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                                Profile
+                                Profil
                             </a>
                         </li>
                     @else
                         <li>
                             <a href="{{ route('login') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                                Login
+                                Logowanie
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('register') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                                Register
+                                Rejestracja
                             </a>
                         </li>
                     @endauth
@@ -59,22 +59,22 @@
             <!-- Legal -->
             <div>
                 <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-4">
-                    Legal
+                    Prawne
                 </h4>
                 <ul class="space-y-2">
                     <li>
                         <a href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                            Privacy Policy
+                            Polityka prywatności
                         </a>
                     </li>
                     <li>
                         <a href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                            Terms of Service
+                            Regulamin
                         </a>
                     </li>
                     <li>
                         <a href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-                            Contact
+                            Kontakt
                         </a>
                     </li>
                 </ul>
@@ -84,7 +84,7 @@
         <!-- Bottom Bar -->
         <div class="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
             <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-                &copy; {{ date('Y') }} {{ config('app.name', 'VibeTravels') }}. All rights reserved.
+                &copy; {{ date('Y') }} {{ config('app.name', 'VibeTravels') }}. Wszelkie prawa zastrzeżone.
             </p>
         </div>
     </div>

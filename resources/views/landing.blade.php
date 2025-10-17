@@ -5,8 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name') }} - Plan Your Perfect Trip with AI</title>
-        <meta name="description" content="Create personalized travel itineraries in seconds with AI-powered planning. Save time, discover hidden gems, and travel smarter.">
+        <title>{{ config('app.name') }} - Zaplanuj idealną podróż z AI</title>
+        <meta name="description" content="Twórz spersonalizowane plany podróży w sekundy dzięki AI. Oszczędzaj czas, odkrywaj ukryte perły i podróżuj mądrzej.">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -29,10 +29,10 @@
                         </div>
                         <div class="flex items-center space-x-4">
                             <a href="{{ route('login') }}" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-3 py-2 text-sm font-medium transition">
-                                Log In
+                                Zaloguj się
                             </a>
                             <a href="{{ route('register') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-                                Get Started
+                                Rozpocznij
                             </a>
                         </div>
                     </div>
@@ -44,23 +44,23 @@
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
                     <div class="text-center">
                         <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 dark:text-white mb-6">
-                            Plan Your Perfect Trip
-                            <span class="block text-blue-600 dark:text-blue-400">with AI in Seconds</span>
+                            Zaplanuj idealną podróż
+                            <span class="block text-blue-600 dark:text-blue-400">z AI w sekundy</span>
                         </h1>
                         <p class="mt-6 max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300">
-                            Stop spending hours researching. Let AI create a personalized day-by-day itinerary
-                            tailored to your preferences, budget, and travel style.
+                            Przestań tracić godziny na researchu. Pozwól AI stworzyć spersonalizowany plan dzień po dniu,
+                            dostosowany do Twoich preferencji, budżetu i stylu podróżowania.
                         </p>
                         <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
                             <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition shadow-lg">
-                                🚀 Start Planning Free
+                                🚀 Zacznij za darmo
                             </a>
                             <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-8 py-4 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                Sign In
+                                Zaloguj się
                             </a>
                         </div>
                         <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                            ✨ 10 free AI-generated plans per month • No credit card required
+                            ✨ 10 bezpłatnych planów AI miesięcznie • Bez karty kredytowej
                         </p>
                     </div>
                 </div>
@@ -70,10 +70,10 @@
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div class="text-center mb-16">
                             <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                                Why Choose {{ config('app.name') }}?
+                                Dlaczego {{ config('app.name') }}?
                             </h2>
                             <p class="text-lg text-gray-600 dark:text-gray-300">
-                                Travel planning made simple, smart, and personalized
+                                Planowanie podróży proste, inteligentne i spersonalizowane
                             </p>
                         </div>
 
@@ -84,11 +84,11 @@
                                     🤖
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                    AI-Powered Planning
+                                    Planowanie z AI
                                 </h3>
                                 <p class="text-gray-600 dark:text-gray-300">
-                                    Our advanced AI analyzes your preferences to create perfect day-by-day itineraries
-                                    with attractions, restaurants, and activities.
+                                    Nasze zaawansowane AI analizuje Twoje preferencje, tworząc idealne plany dzień po dniu
+                                    z atrakcjami, restauracjami i aktywnościami.
                                 </p>
                             </div>
 
@@ -98,11 +98,11 @@
                                     ⚡
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                    Save Hours of Time
+                                    Oszczędność czasu
                                 </h3>
                                 <p class="text-gray-600 dark:text-gray-300">
-                                    Get a complete travel plan in 30-60 seconds instead of spending days
-                                    researching destinations, restaurants, and activities.
+                                    Uzyskaj kompletny plan podróży w 30-60 sekund zamiast spędzać dni
+                                    na researchu destynacji, restauracji i atrakcji.
                                 </p>
                             </div>
 
@@ -112,11 +112,11 @@
                                     🎯
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                    Personalized Experience
+                                    Spersonalizowane plany
                                 </h3>
                                 <p class="text-gray-600 dark:text-gray-300">
-                                    Tailored to your travel pace, budget, interests, and dietary restrictions.
-                                    Every plan is unique to you.
+                                    Dostosowane do Twojego tempa podróży, budżetu, zainteresowań i preferencji żywieniowych.
+                                    Każdy plan jest unikalny.
                                 </p>
                             </div>
                         </div>
@@ -129,11 +129,11 @@
                                 </div>
                                 <div>
                                     <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                        Day-by-Day Itineraries
+                                        Plany dzień po dniu
                                     </h4>
                                     <p class="text-gray-600 dark:text-gray-300">
-                                        Organized schedules with timing, locations, and detailed descriptions
-                                        for each activity.
+                                        Zorganizowane harmonogramy z czasem, lokalizacjami i szczegółowymi opisami
+                                        każdej aktywności.
                                     </p>
                                 </div>
                             </div>
@@ -144,11 +144,11 @@
                                 </div>
                                 <div>
                                     <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                        Budget Tracking
+                                        Kontrola budżetu
                                     </h4>
                                     <p class="text-gray-600 dark:text-gray-300">
-                                        Set your budget per person and get recommendations that fit your
-                                        financial constraints.
+                                        Ustaw budżet na osobę i otrzymuj rekomendacje dopasowane do Twoich
+                                        możliwości finansowych.
                                     </p>
                                 </div>
                             </div>
@@ -159,11 +159,11 @@
                                 </div>
                                 <div>
                                     <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                        Export to PDF
+                                        Eksport do PDF
                                     </h4>
                                     <p class="text-gray-600 dark:text-gray-300">
-                                        Download your itinerary as a beautifully formatted PDF to take offline
-                                        during your trip.
+                                        Pobierz plan jako pięknie sformatowany PDF, aby mieć go offline
+                                        podczas podróży.
                                     </p>
                                 </div>
                             </div>
@@ -174,11 +174,11 @@
                                 </div>
                                 <div>
                                     <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                        Regenerate & Refine
+                                        Regeneruj i udoskonalaj
                                     </h4>
                                     <p class="text-gray-600 dark:text-gray-300">
-                                        Not happy with the plan? Regenerate it instantly or save drafts to
-                                        work on later.
+                                        Nie podoba Ci się plan? Wygeneruj go ponownie natychmiast lub zapisz szkic
+                                        do późniejszej edycji.
                                     </p>
                                 </div>
                             </div>
@@ -191,10 +191,10 @@
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div class="text-center mb-16">
                             <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                                How It Works
+                                Jak to działa
                             </h2>
                             <p class="text-lg text-gray-600 dark:text-gray-300">
-                                From idea to itinerary in 3 simple steps
+                                Od pomysłu do planu w 3 prostych krokach
                             </p>
                         </div>
 
@@ -204,11 +204,11 @@
                                     1
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                    Tell Us Your Preferences
+                                    Podaj swoje preferencje
                                 </h3>
                                 <p class="text-gray-600 dark:text-gray-300">
-                                    Share your destination, dates, budget, interests, and travel style in a
-                                    quick onboarding process.
+                                    Podziel się destynacją, datami, budżetem, zainteresowaniami i stylem podróżowania
+                                    w szybkim procesie onboardingu.
                                 </p>
                             </div>
 
@@ -217,11 +217,11 @@
                                     2
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                    AI Creates Your Plan
+                                    AI tworzy Twój plan
                                 </h3>
                                 <p class="text-gray-600 dark:text-gray-300">
-                                    Our AI analyzes thousands of options to build a personalized itinerary
-                                    with activities, dining, and logistics.
+                                    Nasze AI analizuje tysiące opcji, tworząc spersonalizowany plan
+                                    z aktywnościami, jedzeniem i logistyką.
                                 </p>
                             </div>
 
@@ -230,11 +230,11 @@
                                     3
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                    Review & Travel
+                                    Przeglądaj i podróżuj
                                 </h3>
                                 <p class="text-gray-600 dark:text-gray-300">
-                                    Review your detailed day-by-day plan, download it as PDF, and enjoy
-                                    your perfectly organized trip.
+                                    Przejrzyj szczegółowy plan dzień po dniu, pobierz go jako PDF i ciesz się
+                                    idealnie zorganizowaną podróżą.
                                 </p>
                             </div>
                         </div>
@@ -245,16 +245,16 @@
                 <div class="bg-blue-600 dark:bg-blue-700 py-16">
                     <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
                         <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
-                            Ready to Plan Your Next Adventure?
+                            Gotowy zaplanować kolejną przygodę?
                         </h2>
                         <p class="text-xl text-blue-100 mb-8">
-                            Join thousands of travelers who save time and discover more with AI-powered planning.
+                            Dołącz do tysięcy podróżników, którzy oszczędzają czas i odkrywają więcej dzięki AI.
                         </p>
                         <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-8 py-4 border-2 border-white text-base font-medium rounded-lg text-blue-600 bg-white hover:bg-blue-50 transition shadow-lg">
-                            🚀 Start Planning for Free
+                            🚀 Zacznij planować za darmo
                         </a>
                         <p class="mt-4 text-sm text-blue-100">
-                            No credit card required • 10 free AI plans per month
+                            Bez karty kredytowej • 10 bezpłatnych planów AI miesięcznie
                         </p>
                     </div>
                 </div>

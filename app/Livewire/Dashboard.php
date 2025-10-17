@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire;
 
 use App\Models\TravelPlan;
+use App\Services\LimitService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -160,6 +161,19 @@ class Dashboard extends Component
         $user = Auth::user();
 
         return $user->nickname ?? $user->name ?? 'Podróżniku';
+    }
+
+    /**
+     * Get AI generation limit info for display.
+     *
+     * @return array<string, mixed>
+     */
+    #[Computed]
+    public function aiLimitInfo(): array
+    {
+        $limitService = app(LimitService::class);
+
+        return $limitService->getLimitInfo(Auth::id());
     }
 
     // ==================== RENDER ====================

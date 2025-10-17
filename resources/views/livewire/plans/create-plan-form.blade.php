@@ -1,7 +1,7 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     {{-- Breadcrumbs --}}
     <x-breadcrumbs :items="[
-        ['label' => $editMode ? 'Edit Plan' : 'Create Plan', 'url' => '']
+        ['label' => $editMode ? 'Edytuj plan' : 'Utwórz plan', 'url' => '']
     ]" />
 
     {{-- Header --}}
@@ -12,23 +12,44 @@
         <p class="mt-2 text-gray-600">
             {{ $editMode ? 'Zaktualizuj szczegóły swojego planu podróży.' : 'Wypełnij formularz, aby rozpocząć planowanie Twojej podróży.' }}
         </p>
+        @if(!$editMode)
+            <div class="mt-4 bg-blue-50 border-l-4 border-blue-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            <strong>Wskazówka:</strong> Pola oznaczone <span class="text-red-500">*</span> są wymagane. Możesz zapisać szkic w dowolnym momencie lub wygenerować pełny plan AI.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- Limit Info --}}
     @if(!$editMode && isset($limitInfo))
-        <div class="mb-6 p-4 rounded-lg {{ $limitInfo['color'] === 'red' ? 'bg-red-50 border border-red-200' : ($limitInfo['color'] === 'yellow' ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200') }}">
+        <div class="mb-6 p-4 rounded-lg {{ $limitInfo['color'] === 'red' ? 'bg-red-50 border-l-4 border-red-400' : ($limitInfo['color'] === 'yellow' ? 'bg-yellow-50 border-l-4 border-yellow-400' : 'bg-green-50 border-l-4 border-green-400') }}">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium {{ $limitInfo['color'] === 'red' ? 'text-red-800' : ($limitInfo['color'] === 'yellow' ? 'text-yellow-800' : 'text-green-800') }}">
-                        Generowania AI: {{ $limitInfo['display_text'] }}
-                    </p>
-                    <p class="text-xs {{ $limitInfo['color'] === 'red' ? 'text-red-600' : ($limitInfo['color'] === 'yellow' ? 'text-yellow-600' : 'text-green-600') }}">
-                        Odnowienie: {{ \Carbon\Carbon::parse($limitInfo['reset_date'])->translatedFormat('j F Y') }}
-                    </p>
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-3 {{ $limitInfo['color'] === 'red' ? 'text-red-500' : ($limitInfo['color'] === 'yellow' ? 'text-yellow-500' : 'text-green-500') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold {{ $limitInfo['color'] === 'red' ? 'text-red-800' : ($limitInfo['color'] === 'yellow' ? 'text-yellow-800' : 'text-green-800') }}">
+                            Generowania AI: {{ $limitInfo['display_text'] }}
+                        </p>
+                        <p class="text-xs {{ $limitInfo['color'] === 'red' ? 'text-red-600' : ($limitInfo['color'] === 'yellow' ? 'text-yellow-600' : 'text-green-600') }}">
+                            Odnowienie: {{ \Carbon\Carbon::parse($limitInfo['reset_date'])->translatedFormat('j F Y') }}
+                        </p>
+                    </div>
                 </div>
                 <div class="w-32">
                     <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full {{ $limitInfo['color'] === 'red' ? 'bg-red-500' : ($limitInfo['color'] === 'yellow' ? 'bg-yellow-500' : 'bg-green-500') }}"
+                        <div class="h-full {{ $limitInfo['color'] === 'red' ? 'bg-red-500' : ($limitInfo['color'] === 'yellow' ? 'bg-yellow-500' : 'bg-green-500') }} transition-all duration-300"
                              style="width: {{ $limitInfo['percentage'] }}%"></div>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 <div class="plan-details-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     {{-- Breadcrumbs --}}
     <x-breadcrumbs :items="[
-        ['label' => 'Plans', 'url' => route('dashboard')],
+        ['label' => 'Plany', 'url' => route('dashboard')],
         ['label' => $plan->title, 'url' => '']
     ]" />
 
@@ -169,7 +169,7 @@
     {{-- Generation Progress Overlay --}}
     @if($isGenerating)
         <div
-            wire:poll.3s="checkGenerationStatus"
+            wire:poll.1s="checkGenerationStatus"
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         >
             <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
@@ -182,7 +182,7 @@
                 </p>
                 <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
                     <div
-                        class="h-full bg-blue-600 transition-all duration-300"
+                        class="h-full bg-blue-600 transition-all duration-500 ease-out"
                         style="width: {{ $generationProgress }}%"
                     ></div>
                 </div>
