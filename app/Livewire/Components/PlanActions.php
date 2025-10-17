@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace App\Livewire\Components;
 
 use Livewire\Attributes\Prop;
+use Livewire\Attributes\Reactive;
 use Livewire\Component;
 
 class PlanActions extends Component
 {
     #[Prop]
+    #[Reactive]
     public string $status;
 
     #[Prop]
+    #[Reactive]
     public int $aiGenerationsRemaining;
 
     #[Prop]
+    #[Reactive]
     public bool $hasAiPlan;
 
     #[Prop]

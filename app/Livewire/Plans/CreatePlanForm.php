@@ -182,9 +182,12 @@ class CreatePlanForm extends Component
         cache()->put($rateLimitKey, $attempts + 1, 60); // TTL: 60 seconds
 
         try {
-            // Start loading state
+            // Start loading state FIRST (before any operations)
             $this->isGenerating = true;
             $this->errorMessage = null;
+
+            // Force frontend update to show loading state
+            $this->dispatch('$refresh');
 
             // Prepare plan data (draft status until AI generation completes)
             $planData = $this->preparePlanData($validated, 'draft');
@@ -214,18 +217,22 @@ class CreatePlanForm extends Component
             // Use sync queue in local environment
             if (app()->environment(['local', 'development'])) {
                 $job->onConnection('sync');
+                // In sync mode, generation is already complete
+                session()->flash('success', 'Plan został pomyślnie wygenerowany!');
             } else {
                 $job->onQueue('ai-generation');
+                // In async mode, generation is starting
+                session()->flash('success', 'Generowanie planu rozpoczęte. Zajmie to około 30-60 sekund...');
             }
 
-            // Redirect using JavaScript
-            $this->js("window.location.href = '" . route('plans.show', $travel->id) . "'");
+            // Redirect using Livewire redirect (preserves state better than JS redirect)
+            $this->redirect(route('plans.show', $travel->id), navigate: true);
         } catch (LimitExceededException $e) {
+            $this->isGenerating = false;
             $this->handleLimitError($e);
         } catch (\Exception $e) {
-            $this->handleGenerationError($e);
-        } finally {
             $this->isGenerating = false;
+            $this->handleGenerationError($e);
         }
     }
 

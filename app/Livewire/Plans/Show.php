@@ -80,6 +80,9 @@ class Show extends Component
         $this->plan = $plan;
         $this->feedback = $plan->feedback;
         $this->loadUserContext();
+
+        // Check if there's an ongoing generation for this plan
+        $this->checkForOngoingGeneration();
     }
 
     /**
@@ -115,6 +118,41 @@ class Show extends Component
     protected function getUserAiGenerationsRemaining(): int
     {
         return $this->limitService->getRemainingGenerations(Auth::id());
+    }
+
+    /**
+     * Check if there's an ongoing generation when component mounts.
+     */
+    protected function checkForOngoingGeneration(): void
+    {
+        // Check if there's a pending OR processing generation for this plan
+        $pendingGeneration = \App\Models\AIGeneration::where('travel_plan_id', $this->plan->id)
+            ->whereIn('status', ['pending', 'processing'])
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($pendingGeneration) {
+            // Check if generation is stuck (older than 3 minutes = 180 seconds)
+            $ageInSeconds = now()->diffInSeconds($pendingGeneration->created_at);
+            $maxAge = 180; // 3 minutes (job timeout is 120s + 60s buffer)
+
+            if ($ageInSeconds > $maxAge) {
+                // Mark as failed due to timeout
+                $pendingGeneration->markAsFailed('Przekroczono limit czasu generowania (timeout)');
+                Log::warning('AI generation timed out', [
+                    'ai_generation_id' => $pendingGeneration->id,
+                    'age_seconds' => $ageInSeconds,
+                ]);
+                session()->flash('error', 'Generowanie planu przekroczyło limit czasu. Spróbuj ponownie.');
+
+                return;
+            }
+
+            $this->isGenerating = true;
+            $this->generationId = $pendingGeneration->id;
+            // Start with 10% to show that something is happening
+            $this->generationProgress = 10;
+        }
     }
 
     /**
@@ -201,8 +239,9 @@ class Show extends Component
         }
 
         try {
-            // Start loading state
+            // Start loading state with initial progress
             $this->isGenerating = true;
+            $this->generationProgress = 10; // Start with 10% to show immediate feedback
 
             // Increment generation count with race condition protection
             $aiGeneration = $this->limitService->incrementGenerationCount(
@@ -210,31 +249,50 @@ class Show extends Component
                 $this->plan->id
             );
 
+            // Store generation ID for polling BEFORE dispatching job
+            $this->generationId = $aiGeneration->id;
+
             // Get user preferences
             $userPreferences = $this->preferenceService->getUserPreferences(Auth::id());
 
-            // Dispatch to queue (use database queue for async processing)
-            GenerateTravelPlanJob::dispatch(
+            // Dispatch to queue
+            $job = GenerateTravelPlanJob::dispatch(
                 travelPlanId: $this->plan->id,
                 userId: Auth::id(),
                 aiGenerationId: $aiGeneration->id,
                 userPreferences: $userPreferences
-            )->onQueue('ai-generation');
+            );
 
-            // Store generation ID for polling
-            $this->generationId = $aiGeneration->id;
-            $this->generationProgress = 0;
+            // Use sync queue in local environment for immediate processing
+            if (app()->environment(['local', 'development'])) {
+                $job->onConnection('sync');
+
+                // In sync mode, job executes immediately - reload and stop showing modal
+                $this->isGenerating = false;
+                $this->generationProgress = 100;
+                $this->reloadPlan();
+                session()->flash('success', 'Plan został pomyślnie wygenerowany!');
+            } else {
+                $job->onQueue('ai-generation');
+
+                // In async mode, show progress modal
+                session()->flash('success', 'Generowanie planu rozpoczęte. Zajmie to około 30-60 sekund...');
+            }
 
             // Update remaining generations
             $this->aiGenerationsRemaining = $this->getUserAiGenerationsRemaining();
-
-            session()->flash('success', 'Generowanie planu rozpoczęte. Zajmie to około 30 sekund...');
         } catch (LimitExceededException $e) {
             $this->isGenerating = false;
+            $this->generationProgress = 0;
             session()->flash('error', $e->getMessage());
             Log::warning('Generation limit exceeded', ['user_id' => Auth::id()]);
         } catch (\Exception $e) {
             $this->isGenerating = false;
+            $this->generationProgress = 0;
+
+            // Reload plan to ensure UI is in sync (important for sync queue mode)
+            $this->reloadPlan();
+
             session()->flash('error', 'Wystąpił problem z generowaniem planu. Spróbuj ponownie.');
             Log::error('Failed to start plan generation', [
                 'user_id' => Auth::id(),
@@ -259,7 +317,26 @@ class Show extends Component
 
         if (! $aiGeneration) {
             $this->isGenerating = false;
+            $this->generationProgress = 0;
             session()->flash('error', 'Nie znaleziono informacji o generowaniu.');
+
+            return;
+        }
+
+        // Check for timeout (job stuck for more than 3 minutes)
+        $ageInSeconds = now()->diffInSeconds($aiGeneration->created_at);
+        $maxAge = 180; // 3 minutes
+
+        if (in_array($aiGeneration->status, ['pending', 'processing']) && $ageInSeconds > $maxAge) {
+            // Mark as failed and stop polling
+            $aiGeneration->markAsFailed('Przekroczono limit czasu generowania (timeout)');
+            $this->isGenerating = false;
+            $this->generationProgress = 0;
+            session()->flash('error', 'Generowanie planu przekroczyło limit czasu. Spróbuj ponownie.');
+            Log::warning('AI generation timed out during polling', [
+                'ai_generation_id' => $aiGeneration->id,
+                'age_seconds' => $ageInSeconds,
+            ]);
 
             return;
         }
@@ -271,15 +348,20 @@ class Show extends Component
             session()->flash('success', 'Plan został pomyślnie wygenerowany!');
         } elseif ($aiGeneration->status === 'failed') {
             $this->isGenerating = false;
+            $this->generationProgress = 0;
             $errorMessage = $aiGeneration->error_message ?? 'Nieznany błąd';
             session()->flash('error', "Generowanie nie powiodło się: {$errorMessage}");
         } else {
-            // Processing - estimate progress based on time elapsed
+            // Still pending or processing - estimate progress based on time elapsed
             $elapsed = now()->diffInSeconds($aiGeneration->created_at);
-            $estimatedDuration = 30; // seconds
-            // Cap at 90% until completion, prevent going over 100%
-            $calculatedProgress = ($elapsed / $estimatedDuration) * 100;
-            $this->generationProgress = (int) min(90, max(0, $calculatedProgress));
+            $estimatedDuration = 45; // seconds (increased to be more realistic)
+
+            // Calculate progress: start at 10%, cap at 90% until completion
+            $baseProgress = 10; // Start at 10% (set in confirmRegenerate)
+            $calculatedProgress = $baseProgress + (($elapsed / $estimatedDuration) * 80);
+
+            // Ensure progress is between current value and 90% (never decrease, never exceed 90%)
+            $this->generationProgress = (int) min(90, max($this->generationProgress, $calculatedProgress));
         }
     }
 
