@@ -241,8 +241,13 @@ docker compose -f docker-compose.production.yml restart app worker
 ### If permissions errors:
 
 ```bash
-docker compose -f docker-compose.production.yml exec app chown -R www-data:www-data storage bootstrap/cache public/vendor
-docker compose -f docker-compose.production.yml exec app chmod -R 775 storage bootstrap/cache
+# Fix permissions on host (not inside container)
+# Use deploy:deploy because volumes are bind-mounted from host
+sudo chown -R deploy:deploy storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+
+# Fix public/vendor if needed (Livewire published assets)
+sudo chown -R deploy:deploy public/vendor
 ```
 
 ---

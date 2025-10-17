@@ -800,9 +800,17 @@ docker compose -f docker-compose.production.yml run --rm node npm run build
 
 ```bash
 # Fix storage permissions
-docker compose -f docker-compose.production.yml exec app chmod -R 775 storage bootstrap/cache
-docker compose -f docker-compose.production.yml exec app chown -R www-data:www-data storage bootstrap/cache
+# IMPORTANT: Use deploy:deploy ownership (not www-data:www-data)
+# Because Docker volumes are mounted from host filesystem
+sudo chown -R deploy:deploy storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
 ```
+
+**Why `deploy:deploy` and not `www-data:www-data`?**
+- The `storage` and `bootstrap/cache` directories are bind-mounted from the host into containers
+- The deploy user runs the deployment process and needs write access
+- Docker containers access files via volume mounts, so they inherit host permissions
+- Using `www-data:www-data` causes permission conflicts with CI/CD deployments
 
 **Step 7: Verify Deployment**
 
@@ -847,7 +855,7 @@ Add these secrets:
 
 **Step 2: Configure GitHub Actions**
 
-The workflow file `.github/workflows/deploy.yml` is created in the next task.
+The workflow file `.github/workflows/pipeline.yml` is already configured.
 
 **Workflow triggers:**
 - ✅ **Push to main branch** - automatic deployment
@@ -863,7 +871,22 @@ The workflow file `.github/workflows/deploy.yml` is created in the next task.
 7. SSH to server and deploy
 8. Run migrations
 9. Clear/cache config
-10. Restart services
+10. **Restart Supervisor workers** (automatic if Supervisor is installed)
+11. Verify deployment
+
+**Worker Restart on Deployment:**
+
+The CI/CD pipeline automatically restarts queue workers after each deployment:
+- If Supervisor is installed: `sudo supervisorctl restart vibetravels-worker:*`
+- If Supervisor is not installed: Shows a warning to run the setup script
+
+To ensure workers restart automatically, run the setup script once on the server:
+```bash
+cd /var/www/vibetravels
+sudo ./scripts/setup-production-services.sh
+```
+
+After that, all future deployments will automatically restart workers to pick up code changes.
 
 ---
 
@@ -905,113 +928,398 @@ docker compose -f docker-compose.production.yml exec app php artisan config:cach
 - Offload to background job for better UX
 - Prevents timeout on web requests
 
-**Configuration:**
+**Queue Configuration:**
 
-Queue worker runs as a separate service in `docker-compose.production.yml`:
+This application uses `database` as the queue driver (not Redis). Jobs are stored in the `jobs` table.
 
-```yaml
-worker:
-  image: vibetravels-app
-  container_name: vibetravels-worker
-  restart: unless-stopped
-  command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
-  volumes:
-    - ./:/var/www
-  depends_on:
-    - mysql
-    - redis
-  networks:
-    - vibetravels
-```
+**Key Job:**
+- `GenerateTravelPlanJob` - Generates AI-powered travel itineraries (timeout: 120s, retries: 2)
 
-**Monitoring queue:**
+---
+
+#### Production Setup (Supervisor)
+
+In production, queue workers are managed by **Supervisor** running on the host (not inside Docker containers). This provides better reliability and monitoring.
+
+**Step 1: Run Setup Script**
+
+On the production server, run the automated setup script:
 
 ```bash
-# Check queue status
+cd /var/www/vibetravels
+sudo ./scripts/setup-production-services.sh
+```
+
+This script will:
+- ✅ Install Supervisor
+- ✅ Configure 2 queue workers
+- ✅ Set up Laravel scheduler (cron)
+- ✅ Configure logging
+- ✅ Start workers automatically
+
+**Step 2: Verify Workers are Running**
+
+```bash
+# Check worker status
+sudo supervisorctl status vibetravels-worker:*
+
+# Should show:
+# vibetravels-worker:vibetravels-worker_00   RUNNING   pid 12345, uptime 0:01:23
+# vibetravels-worker:vibetravels-worker_01   RUNNING   pid 12346, uptime 0:01:23
+```
+
+**Manual Setup (if needed):**
+
+If the automated script fails, you can set up manually:
+
+```bash
+# 1. Install Supervisor
+sudo apt update
+sudo apt install -y supervisor
+
+# 2. Copy worker config
+sudo cp config/vibetravels-worker.conf /etc/supervisor/conf.d/
+
+# 3. Reload Supervisor
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start vibetravels-worker:*
+```
+
+---
+
+#### Managing Queue Workers
+
+**View worker status:**
+```bash
+sudo supervisorctl status vibetravels-worker:*
+```
+
+**Restart workers (after code deployment):**
+```bash
+sudo supervisorctl restart vibetravels-worker:*
+```
+
+**Stop workers:**
+```bash
+sudo supervisorctl stop vibetravels-worker:*
+```
+
+**View worker logs:**
+```bash
+# Real-time logs
+sudo tail -f /var/www/html/storage/logs/worker.log
+
+# Or view via Supervisor
+sudo supervisorctl tail -f vibetravels-worker:0
+```
+
+---
+
+#### Monitoring Queue
+
+**Check queue status:**
+```bash
+# View pending jobs
 docker compose -f docker-compose.production.yml exec app php artisan queue:monitor
 
 # View failed jobs
 docker compose -f docker-compose.production.yml exec app php artisan queue:failed
 
-# Retry failed job
+# Check jobs table
+docker compose -f docker-compose.production.yml exec app php artisan tinker
+>>> DB::table('jobs')->count();
+>>> DB::table('failed_jobs')->count();
+```
+
+**Retry failed jobs:**
+```bash
+# Retry specific job
 docker compose -f docker-compose.production.yml exec app php artisan queue:retry JOB_ID
 
-# Clear failed jobs
+# Retry all failed jobs
+docker compose -f docker-compose.production.yml exec app php artisan queue:retry all
+```
+
+**Clear failed jobs:**
+```bash
 docker compose -f docker-compose.production.yml exec app php artisan queue:flush
 ```
 
-**Supervisor (alternative to Docker command):**
+---
 
-If you prefer Supervisor inside the container:
+#### Troubleshooting Workers
+
+**Problem: Workers not processing jobs**
 
 ```bash
-# Supervisor config is at docker/php/supervisord.conf
-# It's automatically started in the Dockerfile
+# 1. Check if workers are running
+sudo supervisorctl status vibetravels-worker:*
 
-# Check supervisor status
-docker compose -f docker-compose.production.yml exec app supervisorctl status
+# 2. Check worker logs for errors
+sudo tail -50 /var/www/html/storage/logs/worker.log
 
-# Restart queue worker
-docker compose -f docker-compose.production.yml exec app supervisorctl restart laravel-worker:*
+# 3. Check Laravel logs
+docker compose -f docker-compose.production.yml exec app tail -f storage/logs/laravel.log
+
+# 4. Manually process one job
+docker compose -f docker-compose.production.yml exec app php artisan queue:work database --once
+
+# 5. Restart workers
+sudo supervisorctl restart vibetravels-worker:*
 ```
+
+**Problem: Jobs timing out**
+
+Check `GenerateTravelPlanJob` settings in `app/Jobs/GenerateTravelPlanJob.php`:
+- `timeout = 120` seconds (2 minutes)
+- `tries = 2` (retry once if fails)
+- Increase if OpenAI API is slow
+
+**Problem: High memory usage**
+
+```bash
+# Check worker memory
+ps aux | grep "queue:work"
+
+# Restart workers to clear memory
+sudo supervisorctl restart vibetravels-worker:*
+```
+
+---
+
+#### Configuration Files
+
+**Supervisor config** (`config/vibetravels-worker.conf`):
+```ini
+[program:vibetravels-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/html/artisan queue:work database --sleep=3 --tries=3 --max-time=3600 --timeout=120
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/html/storage/logs/worker.log
+stopwaitsecs=3600
+```
+
+**Key settings:**
+- `numprocs=2` - Runs 2 worker processes (adjust based on load)
+- `--max-time=3600` - Restart worker after 1 hour (prevents memory leaks)
+- `--timeout=120` - Kill job after 2 minutes
+- `--tries=3` - Retry failed jobs up to 3 times
+- `user=www-data` - Run as web server user
 
 ---
 
 ### Laravel Scheduler (Cron)
 
 **Why we need scheduler:**
-- Reset monthly AI generation limits (1st of each month)
-- Mark trips as completed (day after end date)
-- Send trip reminders (3 days before departure)
-- Clean up expired email verifications
-- Prune old logs and failed jobs
+- Reset monthly AI generation limits (1st of each month at 00:01)
+- Mark trips as completed (daily check for past trips)
 
-**Configuration:**
+**Scheduled Commands:**
 
-Scheduler runs inside the `app` container via cron:
-
-```bash
-# Cron is configured in Dockerfile
-# Entry: * * * * * cd /var/www && php artisan schedule:run >> /dev/null 2>&1
-```
-
-**Scheduled commands** (in `app/Console/Kernel.php`):
+The application has these scheduled commands (in `routes/console.php`):
 
 ```php
-protected function schedule(Schedule $schedule)
-{
-    // Reset AI generation limits monthly
-    $schedule->command('limits:reset')
-        ->monthlyOn(1, '00:00')
-        ->timezone('Europe/Warsaw');
+// Daily: Auto-complete past trips
+Schedule::command('plans:auto-complete')->daily();
 
-    // Mark trips as completed
-    $schedule->command('trips:auto-complete')
-        ->dailyAt('03:00');
-
-    // Send trip reminders
-    $schedule->command('trips:send-reminders')
-        ->dailyAt('09:00');
-
-    // Clean up
-    $schedule->command('auth:clear-resets')->everyFifteenMinutes();
-    $schedule->command('queue:prune-failed --hours=48')->daily();
-    $schedule->command('telescope:prune')->daily(); // if using Telescope
-}
+// Monthly: Reset AI limits (on 1st of month at 00:01)
+Schedule::command('limits:reset-monthly')
+    ->monthlyOn(1, '00:01')
+    ->timezone('Europe/Warsaw');
 ```
 
-**Verify scheduler:**
+**Commands:**
+- `plans:auto-complete` - Marks trips as 'completed' when their end date has passed
+- `limits:reset-monthly` - Placeholder for future email notifications about limit resets
+
+---
+
+#### Production Setup (System Cron)
+
+The Laravel scheduler is triggered by a system cron job that runs every minute.
+
+**Step 1: Run Setup Script**
+
+The setup script (from Queue Workers section) also configures the scheduler:
 
 ```bash
-# List scheduled tasks
+cd /var/www/vibetravels
+sudo ./scripts/setup-production-services.sh
+```
+
+This adds a cron job for the `www-data` user.
+
+**Step 2: Verify Cron is Running**
+
+```bash
+# Check cron jobs for www-data user
+sudo crontab -u www-data -l
+
+# Should show:
+# * * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1
+```
+
+**Manual Setup (if needed):**
+
+If the automated script fails, set up manually:
+
+```bash
+# Add cron job for www-data user
+sudo crontab -u www-data -e
+
+# Add this line:
+* * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1
+
+# Save and exit
+```
+
+---
+
+#### Managing Scheduled Tasks
+
+**List all scheduled tasks:**
+```bash
 docker compose -f docker-compose.production.yml exec app php artisan schedule:list
 
-# Run scheduler once (for testing)
+# Should show:
+# 0 0 * * * plans:auto-complete .............. Daily at 00:00
+# 1 0 1 * * limits:reset-monthly ............. Monthly on 1st at 00:01
+```
+
+**Run scheduler manually (for testing):**
+```bash
+# Run all due commands
 docker compose -f docker-compose.production.yml exec app php artisan schedule:run
 
-# Check logs
-docker compose -f docker-compose.production.yml exec app tail -f storage/logs/laravel.log | grep "schedule:"
+# Run specific command
+docker compose -f docker-compose.production.yml exec app php artisan plans:auto-complete
+docker compose -f docker-compose.production.yml exec app php artisan limits:reset-monthly
 ```
+
+**Test scheduler is working:**
+```bash
+# Check Laravel logs for scheduler output
+docker compose -f docker-compose.production.yml exec app tail -f storage/logs/laravel.log | grep -i "schedule\|auto-complete\|reset"
+
+# Or check system log
+grep "schedule:run" /var/log/syslog
+```
+
+---
+
+#### Monitoring Scheduler
+
+**Check if cron is running:**
+```bash
+# Check cron service status
+sudo systemctl status cron
+
+# View recent cron logs
+grep CRON /var/log/syslog | tail -20
+```
+
+**Verify scheduler execution:**
+```bash
+# Enable scheduler logging in production
+# Add to .env:
+# LOG_LEVEL=info
+
+# Then check logs
+docker compose -f docker-compose.production.yml exec app tail -50 storage/logs/laravel.log | grep schedule
+```
+
+---
+
+#### Troubleshooting Scheduler
+
+**Problem: Scheduled tasks not running**
+
+```bash
+# 1. Check if cron service is running
+sudo systemctl status cron
+
+# 2. Verify cron job exists
+sudo crontab -u www-data -l
+
+# 3. Check file permissions
+ls -la /var/www/html/artisan
+# Should be executable
+
+# 4. Test artisan schedule:run manually
+docker compose -f docker-compose.production.yml exec app php artisan schedule:run
+
+# 5. Check cron logs
+grep CRON /var/log/syslog | tail -50
+
+# 6. Check for errors in Laravel logs
+docker compose -f docker-compose.production.yml exec app tail -100 storage/logs/laravel.log
+```
+
+**Problem: Commands not executing even though scheduler runs**
+
+```bash
+# 1. List scheduled tasks to verify they're registered
+docker compose -f docker-compose.production.yml exec app php artisan schedule:list
+
+# 2. Check timezone is correct
+docker compose -f docker-compose.production.yml exec app php artisan tinker
+>>> config('app.timezone');
+>>> now()->toDateTimeString();
+
+# 3. Run commands manually to check for errors
+docker compose -f docker-compose.production.yml exec app php artisan plans:auto-complete
+docker compose -f docker-compose.production.yml exec app php artisan limits:reset-monthly
+```
+
+**Problem: Cron not triggering Docker commands**
+
+```bash
+# Make sure www-data user can access Docker
+sudo usermod -aG docker www-data
+
+# Or run cron as deploy user instead:
+sudo crontab -u deploy -e
+# Add: * * * * * cd /var/www/html && docker compose -f docker-compose.production.yml exec -T app php artisan schedule:run >> /dev/null 2>&1
+```
+
+---
+
+#### Adding New Scheduled Tasks
+
+To add new scheduled commands:
+
+1. Create command: `php artisan make:command YourCommand`
+2. Add schedule in `routes/console.php`:
+   ```php
+   Schedule::command('your:command')->daily();
+   ```
+3. Verify it's registered:
+   ```bash
+   docker compose -f docker-compose.production.yml exec app php artisan schedule:list
+   ```
+4. No need to modify cron - Laravel scheduler handles it automatically
+
+---
+
+#### Scheduled Tasks Reference
+
+| Command | Schedule | Purpose | Status |
+|---------|----------|---------|--------|
+| `plans:auto-complete` | Daily at 00:00 | Mark past trips as completed | ✅ Implemented |
+| `limits:reset-monthly` | Monthly 1st at 00:01 | Reset AI limits (placeholder) | ⚠️ Partially implemented |
+
+**Future scheduled tasks** (not yet implemented):
+- Send trip reminder emails (3 days before departure)
+- Clean up old failed jobs
+- Prune old notifications
+- Generate analytics reports
 
 ---
 
@@ -1551,6 +1859,40 @@ docker compose -f docker-compose.production.yml exec mysql mysql -u vibetravels 
 
 # Verify credentials in .env match database
 ```
+
+---
+
+### Storage Permission Errors
+
+**Error: "failed to open stream: Permission denied" in storage/logs/**
+
+This is a common issue after deployment when Laravel cannot write to storage directories.
+
+```bash
+# Fix permissions (use deploy:deploy, not www-data:www-data)
+cd /var/www/vibetravels
+sudo chown -R deploy:deploy storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+
+# Verify permissions
+ls -la storage/
+# Should show: drwxrwxr-x deploy deploy
+
+# Test write access
+docker compose -f docker-compose.production.yml exec app php artisan tinker
+>>> Storage::disk('local')->put('test.txt', 'hello');
+>>> Storage::disk('local')->get('test.txt');
+```
+
+**Why this happens:**
+- Docker volumes bind-mount host directories into containers
+- The `deploy` user runs deployments and needs write access
+- Using `www-data:www-data` ownership breaks CI/CD pipeline file writes
+- Correct ownership is `deploy:deploy` with `775` permissions
+
+**Prevention:**
+- The CI/CD pipeline (`.github/workflows/pipeline.yml`) automatically sets correct permissions
+- If deploying manually, always use `sudo chown -R deploy:deploy storage bootstrap/cache`
 
 ---
 
