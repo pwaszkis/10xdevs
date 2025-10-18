@@ -11,17 +11,41 @@
                 </p>
             </div>
             <div class="flex items-center gap-4">
-                {{-- AI Limit Counter --}}
-                <div class="hidden sm:flex items-center px-4 py-2 bg-white border border-gray-200 rounded-md shadow-sm">
+                {{-- AI Limit Counter - Desktop with Tooltip --}}
+                <div class="hidden sm:flex items-center px-4 py-2 bg-white border border-gray-200 rounded-md shadow-sm relative" x-data="{ showTooltip: false }">
                     <svg class="w-5 h-5 mr-2 {{ $this->aiLimitInfo['color'] === 'red' ? 'text-red-500' : ($this->aiLimitInfo['color'] === 'yellow' ? 'text-yellow-500' : 'text-green-500') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                     </svg>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
                         <span class="text-xs text-gray-500 uppercase tracking-wide">Generowania AI</span>
                         <span class="text-sm font-semibold {{ $this->aiLimitInfo['color'] === 'red' ? 'text-red-600' : ($this->aiLimitInfo['color'] === 'yellow' ? 'text-yellow-600' : 'text-gray-800') }}">
                             {{ $this->aiLimitInfo['display_text'] }}
                         </span>
+                        {{-- Progress Bar --}}
+                        <div class="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                            <div class="h-1.5 rounded-full {{ $this->aiLimitInfo['color'] === 'red' ? 'bg-red-600' : ($this->aiLimitInfo['color'] === 'yellow' ? 'bg-yellow-600' : 'bg-green-600') }}" style="width: {{ $this->aiLimitInfo['percentage'] }}%"></div>
+                        </div>
                     </div>
+
+                    {{-- Tooltip --}}
+                    <div x-show="showTooltip"
+                         x-transition
+                         class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded shadow-lg whitespace-nowrap z-50"
+                         style="display: none;">
+                        Wykorzystane generacje AI w tym miesiącu.<br>
+                        Reset: {{ \Carbon\Carbon::parse($this->aiLimitInfo['reset_date'])->translatedFormat('j F Y') }}
+                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                </div>
+
+                {{-- AI Limit Counter - Mobile --}}
+                <div class="sm:hidden flex items-center px-3 py-1.5 bg-white border border-gray-200 rounded-md shadow-sm">
+                    <svg class="w-4 h-4 mr-1.5 {{ $this->aiLimitInfo['color'] === 'red' ? 'text-red-500' : ($this->aiLimitInfo['color'] === 'yellow' ? 'text-yellow-500' : 'text-green-500') }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <span class="text-xs font-semibold {{ $this->aiLimitInfo['color'] === 'red' ? 'text-red-600' : ($this->aiLimitInfo['color'] === 'yellow' ? 'text-yellow-600' : 'text-gray-800') }}">
+                        {{ $this->aiLimitInfo['used'] }}/{{ $this->aiLimitInfo['limit'] }}
+                    </span>
                 </div>
                 <a href="{{ route('plans.create') }}"
                    wire:navigate
@@ -37,6 +61,63 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        {{-- AI Limit Warning/Info Banners --}}
+        @if($this->aiLimitInfo['percentage'] >= 90)
+            <div class="px-4 sm:px-0 mb-6">
+                <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">
+                                @if($this->aiLimitInfo['remaining'] === 0)
+                                    Osiągnięto limit generacji AI
+                                @else
+                                    Zbliżasz się do limitu generacji AI
+                                @endif
+                            </h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <p>
+                                    Wykorzystano <strong>{{ $this->aiLimitInfo['used'] }} z {{ $this->aiLimitInfo['limit'] }}</strong> dostępnych generacji w tym miesiącu.
+                                    @if($this->aiLimitInfo['remaining'] === 0)
+                                        Limit zostanie odnowiony {{ \Carbon\Carbon::parse($this->aiLimitInfo['reset_date'])->translatedFormat('j F Y') }}.
+                                    @else
+                                        Pozostało {{ $this->aiLimitInfo['remaining'] }} {{ $this->aiLimitInfo['remaining'] === 1 ? 'generacja' : 'generacje' }}.
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @elseif($this->aiLimitInfo['percentage'] >= 70)
+            <div class="px-4 sm:px-0 mb-6">
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">
+                                Uwaga: Wysokie wykorzystanie limitu AI
+                            </h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>
+                                    Wykorzystano <strong>{{ $this->aiLimitInfo['used'] }} z {{ $this->aiLimitInfo['limit'] }}</strong> dostępnych generacji.
+                                    Pozostało jeszcze {{ $this->aiLimitInfo['remaining'] }} {{ $this->aiLimitInfo['remaining'] === 1 ? 'generacja' : ($this->aiLimitInfo['remaining'] <= 4 ? 'generacje' : 'generacji') }}.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if($this->hasPlans)
             {{-- Quick Filters --}}
             <div class="px-4 sm:px-0 mb-6">
