@@ -189,7 +189,7 @@ class CreatePlanForm extends Component
         try {
             // Start loading state FIRST (before any operations) for immediate UI feedback
             $this->isGenerating = true;
-            $this->generationProgress = 15;
+            $this->generationProgress = 20;
             $this->errorMessage = null;
 
             // Prepare plan data (draft status until AI generation completes)
@@ -212,20 +212,13 @@ class CreatePlanForm extends Component
             // Get user preferences
             $userPreferences = $this->preferenceService->getUserPreferences(Auth::id());
 
-            // Dispatch to queue (sync in local env due to PHP version constraints)
-            $job = GenerateTravelPlanJob::dispatch(
+            // Dispatch to queue (always async for better UX with progress popup)
+            GenerateTravelPlanJob::dispatch(
                 travelPlanId: $travel->id,
                 userId: Auth::id(),
                 aiGenerationId: $aiGeneration->id,
                 userPreferences: $userPreferences
-            );
-
-            // Use sync queue in local environment
-            if (app()->environment(['local', 'development'])) {
-                $job->onConnection('sync');
-            } else {
-                $job->onQueue('ai-generation');
-            }
+            )->onQueue('ai-generation');
 
             // Update travelId for redirect later
             $this->travelId = $travel->id;
@@ -414,26 +407,26 @@ class CreatePlanForm extends Component
             $this->errorMessage = "Generowanie nie powiodło się: {$errorMessage}";
         } else {
             // Still pending or processing - estimate progress based on time elapsed
-            $elapsed = now()->diffInSeconds($aiGeneration->created_at);
+            $elapsed = abs(now()->diffInSeconds($aiGeneration->created_at));
             $estimatedDuration = 60; // seconds (realistic estimation for AI generation)
 
             // Calculate progress with smooth curve
-            // Start at 15%, grow fast initially, then slow down, cap at 95%
-            if ($elapsed < 5) {
-                // First 5 seconds: 15% -> 30%
-                $calculatedProgress = 15 + ($elapsed / 5) * 15;
+            // Start at 20%, grow fast initially, then slow down, cap at 95%
+            if ($elapsed < 3) {
+                // First 3 seconds: 20% -> 45% (fast initial growth)
+                $calculatedProgress = 20 + ($elapsed / 3) * 25;
+            } elseif ($elapsed < 8) {
+                // 3-8 seconds: 45% -> 65% (moderate growth)
+                $calculatedProgress = 45 + (($elapsed - 3) / 5) * 20;
             } elseif ($elapsed < 15) {
-                // 5-15 seconds: 30% -> 50%
-                $calculatedProgress = 30 + (($elapsed - 5) / 10) * 20;
+                // 8-15 seconds: 65% -> 80% (slower growth)
+                $calculatedProgress = 65 + (($elapsed - 8) / 7) * 15;
             } elseif ($elapsed < 30) {
-                // 15-30 seconds: 50% -> 70%
-                $calculatedProgress = 50 + (($elapsed - 15) / 15) * 20;
-            } elseif ($elapsed < 50) {
-                // 30-50 seconds: 70% -> 85%
-                $calculatedProgress = 70 + (($elapsed - 30) / 20) * 15;
+                // 15-30 seconds: 80% -> 90% (slow growth)
+                $calculatedProgress = 80 + (($elapsed - 15) / 15) * 10;
             } else {
-                // 50+ seconds: 85% -> 95% (slow down near completion)
-                $calculatedProgress = 85 + min(10, (($elapsed - 50) / 20) * 10);
+                // 30+ seconds: 90% -> 95% (very slow near completion)
+                $calculatedProgress = 90 + min(5, (($elapsed - 30) / 20) * 5);
             }
 
             // Ensure progress never decreases and caps at 95%

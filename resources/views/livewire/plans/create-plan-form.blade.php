@@ -1,4 +1,9 @@
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div
+    class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    @if($isGenerating)
+        wire:poll.1s="checkGenerationStatus"
+    @endif
+>
     {{-- Breadcrumbs --}}
     <x-breadcrumbs :items="[
         ['label' => $editMode ? 'Edytuj plan' : 'Utwórz plan', 'url' => '']
@@ -281,10 +286,7 @@
 
     {{-- Generation Progress Overlay --}}
     @if($isGenerating)
-        <div
-            wire:poll.1s="checkGenerationStatus"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        >
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
                 <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <h3 class="text-2xl font-bold text-gray-900 mb-2">
