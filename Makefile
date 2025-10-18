@@ -18,6 +18,9 @@ help:
 	@echo ""
 	@echo "  make test          - Run PHPUnit tests"
 	@echo "  make test-coverage - Run tests with coverage"
+	@echo "  make dusk          - Run Dusk browser tests"
+	@echo "  make dusk-critical - Run critical path Dusk tests only"
+	@echo "  make dusk-debug    - Start Selenium with VNC (watch tests live)"
 	@echo "  make phpstan       - Run PHPStan analysis"
 	@echo "  make cs-fix        - Fix code style (PHP CS Fixer)"
 	@echo "  make cs-check      - Check code style"
@@ -84,6 +87,43 @@ cs-check:
 	docker compose exec app ./vendor/bin/pint --test
 
 quality: phpstan cs-check test
+
+# Dusk Browser Tests
+dusk-setup:
+	@echo "🚀 Starting Selenium Chrome..."
+	docker compose --profile dusk up -d selenium
+	@echo "⏳ Waiting for Selenium to be ready..."
+	@sleep 5
+	docker compose exec app php artisan dusk:install
+	@echo "📦 Running migrations for Dusk database..."
+	docker compose exec app php artisan migrate --database=mysql --env=dusk.local --force
+	@echo "✅ Dusk setup complete!"
+
+dusk: dusk-setup
+	@echo "🧪 Running Dusk browser tests..."
+	docker compose exec app php artisan dusk
+	@echo "🛑 Stopping Selenium..."
+	docker compose --profile dusk down
+
+dusk-critical: dusk-setup
+	@echo "🧪 Running critical path Dusk tests..."
+	docker compose exec app php artisan dusk --group=critical
+	@echo "🛑 Stopping Selenium..."
+	docker compose --profile dusk down
+
+dusk-headless: dusk-setup
+	@echo "🧪 Running Dusk tests in headless mode..."
+	docker compose exec -e DUSK_HEADLESS_DISABLED=false app php artisan dusk
+	@echo "🛑 Stopping Selenium..."
+	docker compose --profile dusk down
+
+dusk-debug:
+	@echo "🔍 Starting Selenium with VNC access..."
+	@echo "👁️  You can watch tests live at: http://localhost:7900 (password: secret)"
+	docker compose --profile dusk up selenium
+	@echo ""
+	@echo "To run tests in another terminal:"
+	@echo "  docker compose exec app php artisan dusk"
 
 # Database
 fresh:

@@ -31,3 +31,8 @@ parameters:
 
         # Mockery - MockInterface is compatible with mocked classes in tests
         - '#Parameter .* of class App\\Services\\AIGenerationService constructor expects App\\Services\\OpenAI\\OpenAIService, Mockery\\MockInterface given#'
+
+        # Dusk - env() is acceptable in test cases (config not cached in tests)
+        -
+            message: "#Called 'env' outside of the config directory#"
+            path: tests/DuskTestCase.php

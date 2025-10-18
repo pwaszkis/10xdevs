@@ -91,6 +91,24 @@ services:
     profiles:
       - dev
 
+  selenium:
+    image: selenium/standalone-chrome:latest
+    container_name: vibetravels-selenium
+    restart: unless-stopped
+    ports:
+      - "4444:4444"
+      - "7900:7900"  # VNC port (optional - for debugging)
+    volumes:
+      - /dev/shm:/dev/shm  # Shared memory for Chrome stability
+    networks:
+      - vibetravels
+    profiles:
+      - dusk
+    environment:
+      - SE_NODE_MAX_SESSIONS=3
+      - SE_NODE_SESSION_TIMEOUT=300
+      - SE_VNC_NO_PASSWORD=1
+
 networks:
   vibetravels:
     driver: bridge
