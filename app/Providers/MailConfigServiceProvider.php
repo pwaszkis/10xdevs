@@ -21,22 +21,37 @@ class MailConfigServiceProvider extends ServiceProvider
     /**
      * Bootstrap services.
      *
-     * Disable Mailgun click tracking for all emails to prevent URL rewriting.
+     * Disable email tracking (click/opens) for all mailers to prevent URL rewriting.
      * This ensures verification links and other URLs remain clean and direct.
+     *
+     * Supports:
+     * - Mailgun: Uses o:tracking-* headers
+     * - SendGrid: Uses X-SMTPAPI header
      */
     public function boot(): void
     {
         Event::listen(MessageSending::class, function (MessageSending $event) {
             $message = $event->message;
+            $mailer = config('mail.default');
 
-            // Only add Mailgun headers if using Mailgun mailer
-            if (config('mail.default') === 'mailgun') {
+            // Disable tracking for Mailgun
+            if ($mailer === 'mailgun') {
                 // Disable click tracking - prevents URLs from being rewritten
                 // to url7497.przem-podroze.pl tracking links
                 $message->getHeaders()->addTextHeader('o:tracking-clicks', 'no');
-
-                // Optionally disable opens tracking as well (doesn't affect URLs but improves privacy)
                 $message->getHeaders()->addTextHeader('o:tracking-opens', 'no');
+            }
+
+            // Disable tracking for SendGrid (via SMTP)
+            if ($mailer === 'smtp' && str_contains(config('mail.mailers.smtp.host', ''), 'sendgrid')) {
+                // SendGrid uses X-SMTPAPI header to control tracking
+                $smtpapi = json_encode([
+                    'filters' => [
+                        'clicktrack' => ['settings' => ['enable' => 0]],
+                        'opentrack' => ['settings' => ['enable' => 0]],
+                    ],
+                ]);
+                $message->getHeaders()->addTextHeader('X-SMTPAPI', $smtpapi);
             }
         });
     }

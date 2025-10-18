@@ -65,6 +65,11 @@ return [
             'transport' => 'resend',
         ],
 
+        'mailgun' => [
+            'transport' => 'mailgun',
+            // The rest is configured in config/services.php
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
