@@ -6,6 +6,7 @@
 
 **Architecture**:
 - `app` - PHP 8.3 + Laravel 11 (main application)
+- `worker` - Queue worker for AI generation jobs (handles async tasks)
 - `mysql` - MySQL 8 (database)
 - `redis` - Redis (cache/queue)
 - `node` - Node.js (for npm/build tasks)
@@ -136,10 +137,46 @@ make logs
 
 # View specific service logs
 docker compose logs -f app
+docker compose logs -f worker
 
 # View Laravel logs
 docker compose exec app tail -f storage/logs/laravel.log
 ```
+
+### Queue Worker
+
+**IMPORTANT**: Queue worker runs AI generation jobs asynchronously.
+
+```bash
+# Check worker status
+docker compose ps worker
+
+# View worker logs (for debugging AI generation)
+docker compose logs -f worker
+
+# Restart worker (if needed after code changes)
+docker compose restart worker
+
+# Check queue status in Redis
+docker compose exec redis redis-cli LLEN queues:ai-generation
+docker compose exec redis redis-cli LLEN queues:default
+```
+
+**How it works**:
+1. User creates a travel plan → Job is added to Redis queue
+2. Worker container processes the job asynchronously
+3. AI generates the itinerary in the background
+4. Frontend polls for completion and shows progress
+
+**Queues**:
+- `ai-generation` - AI travel plan generation (high priority)
+- `default` - General background tasks
+
+**Important Notes**:
+- Worker must be running for AI generation to work
+- Worker is auto-started with `docker compose up -d`
+- If generation fails, check worker logs: `docker compose logs worker`
+- Failed jobs can be retried up to 3 times automatically
 
 ## 🏗️ Project Structure
 

@@ -79,6 +79,30 @@ services:
     networks:
       - vibetravels
 
+  worker:
+    image: vibetravels-app
+    container_name: vibetravels-worker
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    networks:
+      - vibetravels
+    depends_on:
+      - app
+      - mysql
+      - redis
+    environment:
+      - XDEBUG_MODE=off
+    command: php artisan queue:work redis --queue=default,ai-generation --sleep=3 --tries=3 --max-time=3600 --memory=128
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep 'queue:work' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   node:
     image: node:22-alpine
     container_name: vibetravels-node
