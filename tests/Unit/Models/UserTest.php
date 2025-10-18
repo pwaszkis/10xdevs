@@ -192,15 +192,6 @@ class UserTest extends TestCase
     }
 
     /** @test */
-    public function is_admin_returns_false_by_default(): void
-    {
-        $user = User::factory()->create();
-
-        // Default implementation always returns false (to be implemented later)
-        $this->assertFalse($user->isAdmin());
-    }
-
-    /** @test */
     public function user_fillable_attributes_are_set_correctly(): void
     {
         $user = User::factory()->make([

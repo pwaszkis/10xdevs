@@ -112,26 +112,6 @@ class TravelPlan extends Model
     }
 
     /**
-     * Get the AI recommendations for the travel plan.
-     *
-     * @return HasMany<AIRecommendation>
-     */
-    public function aiRecommendations(): HasMany
-    {
-        return $this->hasMany(AIRecommendation::class);
-    }
-
-    /**
-     * Get the activities for the travel plan.
-     *
-     * @return HasMany<Activity>
-     */
-    public function activities(): HasMany
-    {
-        return $this->hasMany(Activity::class);
-    }
-
-    /**
      * Get the AI generations for the travel plan.
      *
      * @return HasMany<AIGeneration>

@@ -154,15 +154,6 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check if user is admin.
-     */
-    public function isAdmin(): bool
-    {
-        // TODO: Implement actual admin check logic
-        return false;
-    }
-
-    /**
      * Check if user registered via OAuth.
      */
     public function isOAuthUser(): bool

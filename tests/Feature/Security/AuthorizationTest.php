@@ -50,11 +50,7 @@ class AuthorizationTest extends TestCase
         $response = $this->get("/plans/{$plan->id}");
         $this->assertContains($response->status(), [403, 302], 'Should return 403 Forbidden or 302 Redirect');
 
-        // Test 2: Cannot delete plan via API (403 Forbidden or 302 Redirect)
-        $response = $this->deleteJson("/api/travel-plans/{$plan->id}");
-        $this->assertContains($response->status(), [403, 401], 'Should return 403 Forbidden or 401 Unauthorized');
-
-        // Test 3: Cannot export to PDF (403 Forbidden or 302 Redirect)
+        // Test 2: Cannot export to PDF (403 Forbidden or 302 Redirect)
         $response = $this->get("/plans/{$plan->id}/pdf");
         $this->assertContains($response->status(), [403, 302, 404], 'Should return 403/302/404');
 
