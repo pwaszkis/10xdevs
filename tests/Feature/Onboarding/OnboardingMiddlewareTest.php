@@ -55,7 +55,7 @@ class OnboardingMiddlewareTest extends TestCase
 
         // Assert
         $response->assertOk();
-        $response->assertSee('Dashboard'); // Assuming dashboard has this text
+        $response->assertSee('Panel'); // Dashboard translated to Polish
     }
 
     /**
