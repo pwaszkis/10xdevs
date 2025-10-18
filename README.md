@@ -562,27 +562,225 @@ For complete deployment guide, see **[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
 ## Testing
 
-### Running Tests
+VibeTravels has a comprehensive test suite covering unit tests, feature tests, and browser (end-to-end) tests.
+
+### Test Types
+
+#### 1. Unit Tests (`tests/Unit/`)
+Tests individual classes and methods in isolation.
 
 ```bash
-# Run all tests
-docker compose exec app php artisan test
+# Run all unit tests
+docker compose exec app php artisan test --testsuite=Unit
 
-# Run with coverage
-make test-coverage
+# Example: Test a specific model
+docker compose exec app php artisan test tests/Unit/Models/UserTest.php
+```
 
-# Run specific test file
-docker compose exec app php artisan test tests/Feature/AuthTest.php
+#### 2. Feature Tests (`tests/Feature/`)
+Tests complete features and user flows using database interactions.
+
+```bash
+# Run all feature tests
+docker compose exec app php artisan test --testsuite=Feature
+
+# Example: Test authentication flow
+docker compose exec app php artisan test tests/Feature/Auth/AuthenticationTest.php
+
+# Example: Test plan creation
+docker compose exec app php artisan test tests/Feature/Plans/PlanCreationTest.php
+```
+
+**Coverage includes:**
+- ✅ Authentication (login, registration, OAuth)
+- ✅ Onboarding flow
+- ✅ Travel plan CRUD operations
+- ✅ AI generation (with mocked OpenAI)
+- ✅ PDF export functionality
+- ✅ Feedback system
+- ✅ Email notifications
+
+#### 3. Browser Tests (`tests/Browser/`) - Laravel Dusk
+End-to-end tests that simulate real user interactions in a Chrome browser.
+
+**⚠️ Important:** Browser tests are **NOT run in CI/CD** due to execution time (~60-80 seconds) and potential external API calls. They should be run **manually before releases**.
+
+```bash
+# Run all browser tests
+make dusk
+# or
+docker compose exec app php artisan dusk
+
+# Run specific browser test suite
+docker compose exec app php artisan dusk tests/Browser/Auth/
+docker compose exec app php artisan dusk tests/Browser/Plans/PlanCreationTest.php
 
 # Run specific test method
-docker compose exec app php artisan test --filter=test_user_can_register
+docker compose exec app php artisan dusk --filter=test_user_can_login
+```
+
+**Browser test coverage (28 tests, 92 assertions):**
+- ✅ Authentication (10 tests) - login, registration, validation
+- ✅ Onboarding flow (3 tests) - wizard completion, validation
+- ✅ Dashboard (6 tests) - empty state, plan listing, filters
+- ✅ Plan creation (5 tests) - save draft, budgets, validation
+- ✅ Complete user journeys (2 tests) - full workflows
+- ✅ Example pages (2 tests) - welcome, login pages
+
+### Running Browser Tests with Live Preview (VNC)
+
+You can watch browser tests execute in real-time using VNC viewer:
+
+```bash
+# 1. Start tests with live preview
+docker compose exec app php artisan dusk --browse
+
+# 2. Open browser and navigate to:
+# URL: http://localhost:7900/
+# Password: secret
+
+# 3. You'll see Chrome executing tests live!
+```
+
+**Use cases for `--browse` mode:**
+- 🐛 Debugging failing tests
+- 👀 Demonstrating features to stakeholders
+- 🎓 Understanding test behavior visually
+- 🔍 Inspecting UI during test execution
+
+**Tips:**
+- Tests run slower with `--browse` to allow visual observation
+- Run specific tests for faster debugging:
+  ```bash
+  docker compose exec app php artisan dusk --browse \
+    tests/Browser/CompleteUserJourneyTest.php \
+    --filter=test_complete_user_journey_from_login_to_plan_management
+  ```
+
+### Test Database Management
+
+Browser tests use `DatabaseTruncation` trait which automatically cleans up data between tests.
+
+```bash
+# Reset test database if needed
+docker compose exec app php artisan migrate:fresh --seed
+```
+
+### Running All Tests
+
+```bash
+# Run all tests (unit + feature, ~3-5 seconds)
+docker compose exec app php artisan test
+
+# Run with coverage report
+make test-coverage
+
+# Run all tests including browser tests (~80 seconds)
+make test && make dusk
+
+# Run quality checks + unit/feature tests (recommended before commits)
+make quality
 ```
 
 ### Test Structure
 
-- **Unit Tests**: Located in `tests/Unit/`
-- **Feature Tests**: Located in `tests/Feature/`
-- **Coverage Reports**: Generated in `coverage/` directory
+```
+tests/
+├── Unit/                       # Unit tests (isolated)
+│   ├── Models/                # Model tests
+│   └── Services/              # Service tests
+├── Feature/                    # Feature tests (with DB)
+│   ├── Auth/                  # Authentication tests
+│   ├── Onboarding/            # Onboarding flow tests
+│   ├── Plans/                 # Plan management tests
+│   ├── AI/                    # AI generation tests
+│   ├── Profile/               # User profile tests
+│   └── Dashboard/             # Dashboard tests
+├── Browser/                    # Browser/E2E tests (Dusk)
+│   ├── Auth/                  # Login, registration flows
+│   ├── Onboarding/            # Onboarding wizard
+│   ├── Dashboard/             # Dashboard interactions
+│   ├── Plans/                 # Plan creation, editing
+│   ├── CompleteUserJourneyTest.php  # Full user flows
+│   └── screenshots/           # Test failure screenshots (gitignored)
+└── DuskTestCase.php           # Base Dusk test configuration
+```
+
+### CI/CD Pipeline
+
+GitHub Actions automatically runs on every push:
+
+```yaml
+✅ PHPStan (static analysis)
+✅ Laravel Pint (code style)
+✅ PHPUnit (unit + feature tests)
+❌ Dusk tests (manual only - run before releases)
+```
+
+**Why Dusk tests are manual:**
+1. ⏱️ **Execution time** - Takes 60-80 seconds vs 3-5 seconds for unit/feature
+2. 🌐 **External dependencies** - May call real APIs in some scenarios
+3. 💰 **Resource usage** - Requires Chrome browser container
+4. 🎯 **Purpose** - Best for pre-release validation, not every commit
+
+### Best Practices
+
+**For developers:**
+```bash
+# Before committing code
+make quality              # Run static analysis + code style + unit/feature tests
+
+# Before creating PR
+make quality && make dusk # Run all checks including browser tests
+
+# When debugging a feature
+docker compose exec app php artisan dusk --browse tests/Browser/YourTest.php
+```
+
+**For CI/CD:**
+- Unit + Feature tests run automatically on every push
+- Browser tests run manually before releases
+- All tests must pass before merging to `main`
+
+### Test Coverage Goals
+
+- **Unit Tests**: >80% coverage for Models and Services
+- **Feature Tests**: 100% coverage of critical user flows
+- **Browser Tests**: All major user journeys covered
+- **Overall**: >75% code coverage
+
+### Writing New Tests
+
+```bash
+# Generate a new unit test
+docker compose exec app php artisan make:test --unit UserPreferenceTest
+
+# Generate a new feature test
+docker compose exec app php artisan make:test Plans/CreatePlanTest
+
+# Generate a new browser test
+docker compose exec app php artisan dusk:make LoginTest
+```
+
+**Browser test example:**
+```php
+public function test_user_can_create_plan(): void
+{
+    $this->browse(function (Browser $browser) {
+        $user = User::factory()->create();
+
+        $browser->loginAs($user)
+            ->visit('/plans/create')
+            ->assertSee('Stwórz nowy plan podróży')
+            ->type('title', 'Trip to Paris')
+            ->press('Zapisz jako szkic')
+            ->assertPathIs('/plans/1')
+            ->assertSee('Trip to Paris');
+    });
+}
+```
+
+For more testing documentation, see [Laravel Testing Docs](https://laravel.com/docs/11.x/testing) and [Laravel Dusk Docs](https://laravel.com/docs/11.x/dusk).
 
 ## Code Quality
 
@@ -714,6 +912,7 @@ git commit -m "docs: update setup instructions"
 
 - **[CLAUDE.md](CLAUDE.md)** - 🤖 Claude Code AI agent reference (Docker commands, project structure)
 - **[SETUP.md](SETUP.md)** - Detailed installation and configuration guide
+- **[TESTING.md](TESTING.md)** - 🧪 Comprehensive testing guide (Unit, Feature, Dusk/E2E tests)
 - **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Command reference card
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide
 - **[Laravel Documentation](https://laravel.com/docs/11.x)** - Official Laravel framework documentation

@@ -59,9 +59,23 @@ docker compose exec app php artisan make:livewire ComponentName
 ### Testing & Quality
 
 ```bash
-# Run tests (PHPUnit)
+# Run unit + feature tests (PHPUnit) - FAST (~3-5 seconds)
 make test
 # or: docker compose exec app php artisan test
+
+# Run browser tests (Laravel Dusk) - SLOW (~60-80 seconds)
+make dusk
+# or: docker compose exec app php artisan dusk
+
+# Run browser tests with live VNC preview
+docker compose exec app php artisan dusk --browse
+# Then open: http://localhost:7900/ (password: secret)
+
+# Run specific browser test
+docker compose exec app php artisan dusk tests/Browser/Auth/LoginTest.php
+
+# Run specific test method
+docker compose exec app php artisan dusk --filter=test_user_can_login
 
 # Static analysis (PHPStan)
 make phpstan
@@ -78,6 +92,12 @@ make cs-check
 # Run all quality checks (PHPStan + Pint + PHPUnit)
 make quality
 ```
+
+**⚠️ Testing Notes:**
+- **Unit + Feature tests** run in CI/CD automatically (~3-5 seconds)
+- **Browser tests (Dusk)** are run MANUALLY before releases (~60-80 seconds)
+- Browser tests require Chrome container and should not be in CI/CD
+- Use `--browse` flag to watch tests execute in real-time via VNC
 
 **⚠️ Code Style Note:**
 This project uses **Laravel Pint** as the official code style tool. While PHPCS/PHPCBF are installed, they follow strict PSR-12 which conflicts with Laravel conventions. The CI pipeline and `make quality` command use **Pint only** for style checks.
