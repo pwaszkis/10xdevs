@@ -10,7 +10,8 @@ services:
       - ./:/var/www
       - ./docker/php/php-production.ini:/usr/local/etc/php/conf.d/custom.ini
     networks:
-      - vibetravels
+      vibetravels:
+        ipv4_address: 172.18.0.10
     depends_on:
       - mysql
       - redis
@@ -159,6 +160,10 @@ services:
 networks:
   vibetravels:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/24
+          gateway: 172.18.0.1
 
 volumes:
   mysql_data:
