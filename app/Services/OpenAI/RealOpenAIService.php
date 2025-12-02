@@ -20,7 +20,7 @@ class RealOpenAIService implements OpenAIService
     public function __construct(
         protected string $apiKey,
         protected string $defaultModel,
-        protected int $timeout = 30,
+        protected int $timeout = 120,
         protected int $maxRetries = 3
     ) {
         if (empty($this->apiKey) || $this->apiKey === 'your-api-key-here') {
